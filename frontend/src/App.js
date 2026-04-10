@@ -15,6 +15,7 @@ import Billing from "@/pages/Billing";
 import Settings from "@/pages/Settings";
 import AdminPanel from "@/pages/AdminPanel";
 import SharedReportView from "@/pages/SharedReportView";
+import ContentPage from "@/pages/ContentPage";
 import DashboardLayout from "@/components/DashboardLayout";
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/shared/:token" element={<SharedReportView />} />
+            <Route path="/page/:pageKey" element={<ContentPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />

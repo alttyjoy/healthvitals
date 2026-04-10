@@ -250,6 +250,10 @@ export default function Landing() {
             <a href="#features" className="hover:text-[#2C2C2A] transition-colors">Features</a>
             <a href="#pricing" className="hover:text-[#2C2C2A] transition-colors">Pricing</a>
             <a href="#faq" className="hover:text-[#2C2C2A] transition-colors">FAQ</a>
+            <Link to="/page/terms" className="hover:text-[#2C2C2A] transition-colors" data-testid="footer-terms">Terms</Link>
+            <Link to="/page/privacy" className="hover:text-[#2C2C2A] transition-colors" data-testid="footer-privacy">Privacy</Link>
+            <Link to="/page/refund" className="hover:text-[#2C2C2A] transition-colors" data-testid="footer-refunds">Refunds</Link>
+            <Link to="/page/about" className="hover:text-[#2C2C2A] transition-colors" data-testid="footer-about">About</Link>
           </div>
           <p className="text-xs text-[#6E6E6A]">
             Not a medical device. For informational tracking only. Consult your healthcare provider.

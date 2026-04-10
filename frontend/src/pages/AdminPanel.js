@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { formatApiError } from '@/lib/api';
+import { toast } from 'sonner';
 import { VITAL_MAP } from '@/lib/vitals';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
-  Users, ChartLine, CreditCard, FileArrowDown, MagnifyingGlass, ShieldCheck
+  Users, ChartLine, CreditCard, FileArrowDown, MagnifyingGlass, ShieldCheck, Envelope
 } from '@phosphor-icons/react';
 
 export default function AdminPanel() {
@@ -20,6 +24,10 @@ export default function AdminPanel() {
   const [analytics, setAnalytics] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  // SMTP
+  const [smtp, setSmtp] = useState({ smtp_host: '', smtp_port: 587, smtp_username: '', smtp_password: '', smtp_from_email: '', smtp_from_name: '', smtp_use_tls: true });
+  const [smtpSaving, setSmtpSaving] = useState(false);
+  const [smtpLoaded, setSmtpLoaded] = useState(false);
 
   useEffect(() => { loadDashboard(); }, []);
 
@@ -51,7 +59,25 @@ export default function AdminPanel() {
     } catch (e) { console.error(e); }
   };
 
+  const loadSmtp = async () => {
+    try {
+      const { data } = await api.get('/admin/smtp-settings');
+      setSmtp(prev => ({ ...prev, ...data }));
+      setSmtpLoaded(true);
+    } catch (e) { console.error(e); }
+  };
+
+  const saveSmtp = async () => {
+    setSmtpSaving(true);
+    try {
+      await api.put('/admin/smtp-settings', smtp);
+      toast.success('SMTP settings saved');
+    } catch (err) { toast.error(formatApiError(err)); }
+    finally { setSmtpSaving(false); }
+  };
+
   useEffect(() => { if (tab === 'analytics' && !analytics) loadAnalytics(); }, [tab]);
+  useEffect(() => { if (tab === 'settings' && !smtpLoaded) loadSmtp(); }, [tab, smtpLoaded]);
 
   if (loading) return (
     <div className="space-y-4 animate-pulse">{[1,2,3,4].map(i => <div key={i} className="h-24 bg-[#EAE7E1] rounded-2xl" />)}</div>
@@ -72,6 +98,7 @@ export default function AdminPanel() {
           <TabsTrigger value="overview" data-testid="admin-tab-overview" className="rounded-lg data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Overview</TabsTrigger>
           <TabsTrigger value="users" data-testid="admin-tab-users" className="rounded-lg data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Users</TabsTrigger>
           <TabsTrigger value="analytics" data-testid="admin-tab-analytics" className="rounded-lg data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Analytics</TabsTrigger>
+          <TabsTrigger value="settings" data-testid="admin-tab-settings" className="rounded-lg data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Settings</TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -195,6 +222,61 @@ export default function AdminPanel() {
           ) : (
             <div className="animate-pulse space-y-4">{[1,2].map(i => <div key={i} className="h-64 bg-[#EAE7E1] rounded-2xl" />)}</div>
           )}
+        </TabsContent>
+
+        {/* Settings (SMTP) */}
+        <TabsContent value="settings" className="space-y-6 mt-4">
+          <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6" data-testid="admin-smtp-form">
+            <div className="flex items-center gap-3 mb-5">
+              <Envelope weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+              <div>
+                <h3 className="text-base font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>SMTP Configuration</h3>
+                <p className="text-xs text-[#6E6E6A]">Configure email settings for reminders and notifications</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm text-[#2C2C2A]">SMTP Host</Label>
+                <Input value={smtp.smtp_host || ''} onChange={e => setSmtp(s => ({ ...s, smtp_host: e.target.value }))}
+                  placeholder="smtp.gmail.com" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-host" />
+              </div>
+              <div>
+                <Label className="text-sm text-[#2C2C2A]">SMTP Port</Label>
+                <Input type="number" value={smtp.smtp_port || ''} onChange={e => setSmtp(s => ({ ...s, smtp_port: parseInt(e.target.value) || 0 }))}
+                  placeholder="587" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-port" />
+              </div>
+              <div>
+                <Label className="text-sm text-[#2C2C2A]">Username</Label>
+                <Input value={smtp.smtp_username || ''} onChange={e => setSmtp(s => ({ ...s, smtp_username: e.target.value }))}
+                  placeholder="your@email.com" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-username" />
+              </div>
+              <div>
+                <Label className="text-sm text-[#2C2C2A]">Password</Label>
+                <Input type="password" value={smtp.smtp_password || ''} onChange={e => setSmtp(s => ({ ...s, smtp_password: e.target.value }))}
+                  placeholder="App password or SMTP password" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-password" />
+              </div>
+              <div>
+                <Label className="text-sm text-[#2C2C2A]">From Email</Label>
+                <Input value={smtp.smtp_from_email || ''} onChange={e => setSmtp(s => ({ ...s, smtp_from_email: e.target.value }))}
+                  placeholder="noreply@vitaltrack.in" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-from-email" />
+              </div>
+              <div>
+                <Label className="text-sm text-[#2C2C2A]">From Name</Label>
+                <Input value={smtp.smtp_from_name || ''} onChange={e => setSmtp(s => ({ ...s, smtp_from_name: e.target.value }))}
+                  placeholder="VitalTrack" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-from-name" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#EAE7E1]">
+              <div className="flex items-center gap-3">
+                <Switch checked={smtp.smtp_use_tls !== false} onCheckedChange={v => setSmtp(s => ({ ...s, smtp_use_tls: v }))} data-testid="smtp-tls-toggle" />
+                <Label className="text-sm text-[#2C2C2A]">Use TLS</Label>
+              </div>
+              <Button onClick={saveSmtp} disabled={smtpSaving} data-testid="smtp-save-btn"
+                className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-6">
+                {smtpSaving ? 'Saving...' : 'Save SMTP Settings'}
+              </Button>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

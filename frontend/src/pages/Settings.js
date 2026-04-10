@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { User, Heartbeat, Gear, Moon, Globe, LinkSimple, Lock, Copy, Trash, Eye } from '@phosphor-icons/react';
+import { User, Heartbeat, Gear, Moon, Globe, LinkSimple, Lock, Copy, Trash, Eye, UserPlus, Gift, Check } from '@phosphor-icons/react';
 
 const LANGUAGES = [
   { code: 'en', name: 'English', native: 'English' },
@@ -38,6 +38,11 @@ export default function Settings() {
   const [sharePassword, setSharePassword] = useState('');
   const [shareDays, setShareDays] = useState(7);
   const [creatingShare, setCreatingShare] = useState(false);
+  // Referral
+  const [referralCode, setReferralCode] = useState('');
+  const [referralStats, setReferralStats] = useState({ total_referrals: 0, successful_referrals: 0 });
+  const [referralInput, setReferralInput] = useState('');
+  const [applyingReferral, setApplyingReferral] = useState(false);
 
   useEffect(() => {
     api.get('/vitals/enabled').then(res => {
@@ -45,7 +50,34 @@ export default function Settings() {
       setVitalLimit(res.data.vital_limit || 2);
     }).catch(() => {});
     loadSharedReports();
+    loadReferral();
   }, []);
+
+  const loadReferral = async () => {
+    try {
+      const { data } = await api.get('/referral');
+      setReferralCode(data.referral_code || '');
+      setReferralStats({ total_referrals: data.total_referrals || 0, successful_referrals: data.successful_referrals || 0 });
+    } catch { /* ignore */ }
+  };
+
+  const handleApplyReferral = async () => {
+    if (!referralInput.trim()) { toast.error('Enter a referral code'); return; }
+    setApplyingReferral(true);
+    try {
+      const { data } = await api.post('/referral/apply', { code: referralInput.trim() });
+      toast.success(data.message);
+      setReferralInput('');
+      await refreshUser();
+      loadReferral();
+    } catch (err) { toast.error(formatApiError(err)); }
+    finally { setApplyingReferral(false); }
+  };
+
+  const copyReferralCode = () => {
+    navigator.clipboard?.writeText(referralCode);
+    toast.success('Referral code copied!');
+  };
 
   const loadSharedReports = async () => {
     try {
@@ -324,6 +356,68 @@ export default function Settings() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Referral Program */}
+      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <div className="flex items-center gap-3 mb-5">
+          <Gift weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+          <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Referral Program</h2>
+        </div>
+        <p className="text-sm text-[#6E6E6A] mb-4">
+          Share your code with a friend. When they sign up and apply it, both of you get 1 month of Standard plan free!
+        </p>
+
+        {/* Your Referral Code */}
+        {referralCode && (
+          <div className="mb-5">
+            <Label className="text-sm text-[#2C2C2A]">Your Referral Code</Label>
+            <div className="flex items-center gap-2 mt-1.5">
+              <div className="flex-1 bg-[#FAFAF9] border border-[#EAE7E1] rounded-xl px-4 py-2.5 font-mono text-base text-[#2C2C2A] tracking-wider" data-testid="referral-code-display">
+                {referralCode}
+              </div>
+              <Button variant="outline" onClick={copyReferralCode} className="rounded-xl border-[#EAE7E1] px-3" data-testid="copy-referral-code-btn">
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex gap-4 mt-3">
+              <div className="flex items-center gap-1.5 text-sm text-[#6E6E6A]">
+                <UserPlus className="w-4 h-4" /> {referralStats.total_referrals} referred
+              </div>
+              <div className="flex items-center gap-1.5 text-sm text-[#588157]">
+                <Check weight="bold" className="w-4 h-4" /> {referralStats.successful_referrals} successful
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Apply a Referral Code */}
+        {!user?.referred_by && (
+          <>
+            <Separator className="my-4" />
+            <Label className="text-sm text-[#2C2C2A]">Have a referral code?</Label>
+            <div className="flex items-center gap-2 mt-1.5">
+              <Input
+                value={referralInput}
+                onChange={e => setReferralInput(e.target.value)}
+                placeholder="Enter referral code"
+                className="rounded-xl border-[#EAE7E1] bg-[#FAFAF9] font-mono uppercase"
+                data-testid="referral-input"
+              />
+              <Button onClick={handleApplyReferral} disabled={applyingReferral}
+                data-testid="apply-referral-btn"
+                className="rounded-xl bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-5">
+                {applyingReferral ? 'Applying...' : 'Apply'}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {user?.referred_by && (
+          <div className="mt-3 text-sm text-[#588157] flex items-center gap-1.5">
+            <Check weight="bold" className="w-4 h-4" /> Referral code applied: {user.referred_by}
           </div>
         )}
       </div>

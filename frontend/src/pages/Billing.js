@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useSearchParams } from 'react-router-dom';
 import api, { formatApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,10 +14,26 @@ export default function Billing() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [changing, setChanging] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     api.get('/plans').then(res => { setPlans(res.data || []); setLoading(false); }).catch(() => setLoading(false));
   }, []);
+
+  // Handle PayU callback via URL params
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const txnid = searchParams.get('txnid');
+    if (paymentStatus && txnid) {
+      if (paymentStatus === 'success') {
+        toast.success('Payment successful! Your plan has been upgraded.');
+        refreshUser();
+      } else {
+        toast.error('Payment failed or was cancelled. Please try again.');
+      }
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams, refreshUser]);
 
   const currentPlan = user?.plan || 'free';
   const planOrder = ['free', 'standard', 'premium'];
@@ -24,10 +41,8 @@ export default function Billing() {
   const handleRazorpayPayment = useCallback(async (planKey) => {
     setChanging(planKey);
     try {
-      // Create Razorpay order
       const { data: orderData } = await api.post('/razorpay/create-order', { plan_key: planKey, billing_cycle: 'monthly' });
 
-      // Load Razorpay script if not loaded
       if (!window.Razorpay) {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
@@ -78,11 +93,35 @@ export default function Billing() {
     }
   }, [user, refreshUser]);
 
+  const handlePayUPayment = useCallback(async (planKey) => {
+    setChanging(planKey);
+    try {
+      const { data } = await api.post('/payu/initiate', { plan_key: planKey, billing_cycle: 'monthly' });
+      // PayU requires a form POST to the payment URL
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = data.payment_url;
+      Object.entries(data.form_data).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err) {
+      toast.error(formatApiError(err));
+      setChanging(null);
+    }
+  }, []);
+
+  const [paymentGateway, setPaymentGateway] = useState('razorpay');
+
   const handleChangePlan = async (planKey) => {
     if (planKey === currentPlan) return;
     const targetPlan = plans.find(p => p.key === planKey);
 
-    // Free plan: direct switch (downgrade)
     if (targetPlan && targetPlan.price === 0) {
       setChanging(planKey);
       try {
@@ -95,8 +134,11 @@ export default function Billing() {
       return;
     }
 
-    // Paid plan: use Razorpay
-    handleRazorpayPayment(planKey);
+    if (paymentGateway === 'payu') {
+      handlePayUPayment(planKey);
+    } else {
+      handleRazorpayPayment(planKey);
+    }
   };
 
   if (loading) return <div className="animate-pulse space-y-4">{[1,2,3].map(i => <div key={i} className="h-48 bg-[#EAE7E1] rounded-2xl" />)}</div>;
@@ -123,6 +165,37 @@ export default function Billing() {
           <Badge className="bg-[#2D4A3E]/10 text-[#2D4A3E] border-0 text-sm px-3 py-1">
             <CreditCard weight="duotone" className="w-4 h-4 mr-1" /> Active
           </Badge>
+        </div>
+      </div>
+
+      {/* Payment Gateway Selector */}
+      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <p className="text-xs text-[#6E6E6A] uppercase tracking-wide mb-3">Payment Method</p>
+        <div className="flex gap-3" data-testid="payment-gateway-selector">
+          <button
+            onClick={() => setPaymentGateway('razorpay')}
+            data-testid="gateway-razorpay"
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+              paymentGateway === 'razorpay'
+                ? 'border-[#2D4A3E] bg-[#2D4A3E]/5 text-[#2D4A3E]'
+                : 'border-[#EAE7E1] text-[#6E6E6A] hover:border-[#2D4A3E]/30'
+            }`}
+          >
+            <CreditCard weight="duotone" className="w-5 h-5" />
+            Razorpay
+          </button>
+          <button
+            onClick={() => setPaymentGateway('payu')}
+            data-testid="gateway-payu"
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
+              paymentGateway === 'payu'
+                ? 'border-[#2D4A3E] bg-[#2D4A3E]/5 text-[#2D4A3E]'
+                : 'border-[#EAE7E1] text-[#6E6E6A] hover:border-[#2D4A3E]/30'
+            }`}
+          >
+            <Lightning weight="duotone" className="w-5 h-5" />
+            PayU
+          </button>
         </div>
       </div>
 
@@ -190,12 +263,14 @@ export default function Billing() {
         })}
       </div>
 
-      {/* Razorpay Info */}
+      {/* Gateway Info */}
       <div className="bg-[#2D4A3E] rounded-2xl p-6 text-center text-white">
         <Lightning weight="duotone" className="w-8 h-8 mx-auto mb-3 text-white/80" />
-        <h3 className="text-base font-medium mb-1" style={{ fontFamily: 'Outfit' }}>Secure Payments via Razorpay</h3>
+        <h3 className="text-base font-medium mb-1" style={{ fontFamily: 'Outfit' }}>
+          Secure Payments via {paymentGateway === 'payu' ? 'PayU' : 'Razorpay'}
+        </h3>
         <p className="text-sm text-white/70 max-w-md mx-auto">
-          All payments are processed securely through Razorpay. Your card details are never stored on our servers.
+          All payments are processed securely through {paymentGateway === 'payu' ? 'PayU' : 'Razorpay'}. Your card details are never stored on our servers.
         </p>
       </div>
     </div>
