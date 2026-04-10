@@ -40,18 +40,18 @@ logger = logging.getLogger(__name__)
 
 # ==================== CONSTANTS ====================
 VITAL_TYPES = [
-    {"key": "blood_glucose", "name": "Blood Glucose", "unit": "mg/dL", "min": 20, "max": 600, "normal_min": 70, "normal_max": 140, "chart_type": "line", "category": "metabolic"},
-    {"key": "blood_oxygen", "name": "Blood Oxygen", "unit": "%", "min": 70, "max": 100, "normal_min": 95, "normal_max": 100, "chart_type": "area", "category": "respiratory"},
-    {"key": "blood_pressure", "name": "Blood Pressure", "unit": "mmHg", "min": 60, "max": 250, "normal_min": 90, "normal_max": 140, "chart_type": "dual_line", "category": "cardiovascular", "has_dual_value": True, "value2_label": "Diastolic", "value2_min": 40, "value2_max": 150, "value2_normal_min": 60, "value2_normal_max": 90},
-    {"key": "bmi", "name": "BMI", "unit": "kg/m2", "min": 10, "max": 60, "normal_min": 18.5, "normal_max": 24.9, "chart_type": "line", "category": "body"},
+    {"key": "blood_glucose", "name": "Blood Glucose", "unit": "mg/dL", "min": 10, "max": 600, "normal_min": 70, "normal_max": 140, "chart_type": "line", "category": "metabolic"},
+    {"key": "blood_oxygen", "name": "Blood Oxygen", "unit": "%", "min": 10, "max": 100, "normal_min": 95, "normal_max": 100, "chart_type": "area", "category": "respiratory"},
+    {"key": "blood_pressure", "name": "Blood Pressure", "unit": "mmHg", "min": 10, "max": 500, "normal_min": 80, "normal_max": 120, "chart_type": "dual_line", "category": "cardiovascular", "has_dual_value": True, "value2_label": "Diastolic", "value2_min": 40, "value2_max": 150, "value2_normal_min": 60, "value2_normal_max": 90},
+    {"key": "bmi", "name": "BMI", "unit": "kg/m2", "min": 5, "max": 60, "normal_min": 18, "normal_max": 24, "chart_type": "line", "category": "body"},
     {"key": "body_temperature", "name": "Body Temperature", "unit": "F", "min": 90, "max": 110, "normal_min": 97, "normal_max": 99.5, "chart_type": "line", "category": "general"},
-    {"key": "heart_rate", "name": "Heart Rate", "unit": "bpm", "min": 30, "max": 250, "normal_min": 60, "normal_max": 100, "chart_type": "line", "category": "cardiovascular"},
+    {"key": "heart_rate", "name": "Heart Rate", "unit": "bpm", "min": 10, "max": 250, "normal_min": 72, "normal_max": 100, "chart_type": "line", "category": "cardiovascular"},
     {"key": "respiratory_rate", "name": "Respiratory Rate", "unit": "breaths/min", "min": 5, "max": 60, "normal_min": 12, "normal_max": 20, "chart_type": "line", "category": "respiratory"},
     {"key": "sleep_duration", "name": "Sleep Duration", "unit": "hours", "min": 0, "max": 24, "normal_min": 7, "normal_max": 9, "chart_type": "bar", "category": "lifestyle"},
     {"key": "physical_activity", "name": "Physical Activity", "unit": "minutes", "min": 0, "max": 1440, "normal_min": 30, "normal_max": 120, "chart_type": "bar", "category": "lifestyle"},
-    {"key": "waist_circumference", "name": "Waist Circumference", "unit": "cm", "min": 40, "max": 200, "normal_min": 60, "normal_max": 102, "chart_type": "line", "category": "body"},
-    {"key": "weight", "name": "Weight", "unit": "kg", "min": 20, "max": 300, "normal_min": 50, "normal_max": 100, "chart_type": "line", "category": "body"},
-    {"key": "hydration", "name": "Hydration Level", "unit": "glasses", "min": 0, "max": 30, "normal_min": 8, "normal_max": 15, "chart_type": "bar", "category": "lifestyle"},
+    {"key": "waist_circumference", "name": "Waist Circumference", "unit": "cm", "min": 10, "max": 400, "normal_min": 60, "normal_max": 102, "chart_type": "line", "category": "body"},
+    {"key": "weight", "name": "Weight", "unit": "kg", "min": 1, "max": 300, "normal_min": 50, "normal_max": 100, "chart_type": "line", "category": "body"},
+    {"key": "hydration", "name": "Hydration Level", "unit": "glasses", "min": 0, "max": 20, "normal_min": 8, "normal_max": 15, "chart_type": "bar", "category": "lifestyle"},
 ]
 
 PLANS = [
