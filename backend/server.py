@@ -329,6 +329,7 @@ async def register(req: RegisterRequest, response: Response):
         "email": email, "password_hash": hash_password(req.password),
         "name": req.name.strip(), "role": "user", "plan": "free",
         "enabled_vitals": [], "settings": {"language": "en"},
+        "referral_code": f"VT{secrets.token_hex(4).upper()}",
         "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
     }
     result = await db.users.insert_one(user_doc)
@@ -1033,6 +1034,426 @@ async def list_languages():
         {"code": "hi", "name": "Hindi", "native": "हिन्दी"},
         {"code": "te", "name": "Telugu", "native": "తెలుగు"},
     ]}
+
+# ==================== PAYU.IN ROUTES ====================
+PAYU_KEY = os.environ.get('PAYU_KEY', '')
+PAYU_SALT = os.environ.get('PAYU_SALT', '')
+PAYU_ENDPOINT = "https://test.payu.in/_payment"
+
+def generate_payu_hash(params: dict, salt: str) -> str:
+    key = params.get('key', '')
+    txnid = params.get('txnid', '')
+    amount = params.get('amount', '')
+    productinfo = params.get('productinfo', '')
+    firstname = params.get('firstname', '')
+    email = params.get('email', '')
+    udf1 = params.get('udf1', '')
+    udf2 = params.get('udf2', '')
+    udf3 = params.get('udf3', '')
+    udf4 = params.get('udf4', '')
+    udf5 = params.get('udf5', '')
+    hash_string = f"{key}|{txnid}|{amount}|{productinfo}|{firstname}|{email}|{udf1}|{udf2}|{udf3}|{udf4}|{udf5}||||||{salt}"
+    return hashlib.sha512(hash_string.encode('utf-8')).hexdigest()
+
+def verify_payu_hash(response_hash: str, params: dict, salt: str) -> bool:
+    status = params.get('status', '')
+    email = params.get('email', '')
+    firstname = params.get('firstname', '')
+    productinfo = params.get('productinfo', '')
+    amount = params.get('amount', '')
+    txnid = params.get('txnid', '')
+    key = params.get('key', '')
+    udf5 = params.get('udf5', '')
+    udf4 = params.get('udf4', '')
+    udf3 = params.get('udf3', '')
+    udf2 = params.get('udf2', '')
+    udf1 = params.get('udf1', '')
+    reverse_hash = f"{salt}|{status}||||||{udf5}|{udf4}|{udf3}|{udf2}|{udf1}|{email}|{firstname}|{productinfo}|{amount}|{txnid}|{key}"
+    return hashlib.sha512(reverse_hash.encode('utf-8')).hexdigest() == response_hash
+
+class PayUInitRequest(BaseModel):
+    plan_key: str
+    billing_cycle: str = "monthly"
+
+@api_router.post("/payu/initiate")
+async def payu_initiate(req: PayUInitRequest, request: Request):
+    user = await get_current_user(request)
+    if not PAYU_KEY or not PAYU_SALT:
+        raise HTTPException(status_code=503, detail="PayU not configured")
+    plan = next((p for p in PLANS if p["key"] == req.plan_key), None)
+    if not plan or plan["price"] == 0:
+        raise HTTPException(status_code=400, detail="Invalid plan for payment")
+    price = plan["price_yearly"] if req.billing_cycle == "yearly" else plan["price"]
+    txnid = f"VT{secrets.token_hex(8)}"
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    params = {
+        "key": PAYU_KEY, "txnid": txnid, "amount": f"{price:.2f}",
+        "productinfo": f"VitalTrack {plan['name']} Plan", "firstname": user.get("name", ""),
+        "email": user.get("email", ""), "udf1": str(user["_id"]), "udf2": req.plan_key,
+    }
+    params["hash"] = generate_payu_hash(params, PAYU_SALT)
+    params["surl"] = f"{frontend_url}/billing?payment=success&txnid={txnid}"
+    params["furl"] = f"{frontend_url}/billing?payment=failure&txnid={txnid}"
+    params["service_provider"] = "payu_paisa"
+    await db.payment_transactions.insert_one({
+        "user_id": str(user["_id"]), "txnid": txnid, "plan_key": req.plan_key,
+        "amount": price, "currency": "INR", "gateway": "payu",
+        "status": "created", "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    return {"payment_url": PAYU_ENDPOINT, "form_data": params, "txnid": txnid}
+
+@api_router.post("/payu/callback")
+async def payu_callback(request: Request):
+    form = await request.form()
+    data = dict(form)
+    txnid = data.get("txnid", "")
+    status = data.get("status", "")
+    response_hash = data.get("hash", "")
+    logger.info(f"PayU callback: txnid={txnid}, status={status}")
+    if response_hash and PAYU_SALT:
+        valid = verify_payu_hash(response_hash, data, PAYU_SALT)
+        if not valid:
+            logger.warning(f"PayU hash verification failed for {txnid}")
+    tx = await db.payment_transactions.find_one({"txnid": txnid})
+    if tx and status.lower() == "success":
+        plan_key = tx.get("plan_key", "")
+        user_id = tx.get("user_id", "")
+        new_plan = next((p for p in PLANS if p["key"] == plan_key), None)
+        if new_plan and user_id:
+            user = await db.users.find_one({"_id": ObjectId(user_id)})
+            if user:
+                enabled = user.get("enabled_vitals", [])
+                if new_plan["vital_limit"] < len(enabled):
+                    enabled = enabled[:new_plan["vital_limit"]]
+                await db.users.update_one({"_id": user["_id"]}, {"$set": {"plan": plan_key, "enabled_vitals": enabled}})
+                await db.subscriptions.update_one(
+                    {"user_id": user_id, "status": "active"},
+                    {"$set": {"plan_key": plan_key, "status": "active", "gateway": "payu", "started_at": datetime.now(timezone.utc).isoformat()}},
+                    upsert=True
+                )
+        await db.payment_transactions.update_one({"txnid": txnid}, {"$set": {"status": "captured"}})
+    elif tx:
+        await db.payment_transactions.update_one({"txnid": txnid}, {"$set": {"status": status.lower()}})
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    from starlette.responses import RedirectResponse
+    return RedirectResponse(url=f"{frontend_url}/billing?payment={status.lower()}&txnid={txnid}", status_code=303)
+
+# ==================== BLOG ROUTES ====================
+class BlogPostRequest(BaseModel):
+    title: str
+    slug: str
+    content: str
+    excerpt: Optional[str] = None
+    published: bool = False
+
+@api_router.get("/blog")
+async def list_blog_posts(published_only: bool = True):
+    query = {"published": True} if published_only else {}
+    posts = await db.blog_posts.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return posts
+
+@api_router.get("/blog/{slug}")
+async def get_blog_post(slug: str):
+    post = await db.blog_posts.find_one({"slug": slug}, {"_id": 0})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+@api_router.post("/admin/blog")
+async def create_blog_post(req: BlogPostRequest, request: Request):
+    await get_admin_user(request)
+    doc = {"title": req.title, "slug": req.slug, "content": req.content,
+           "excerpt": req.excerpt or req.content[:200], "published": req.published,
+           "created_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()}
+    await db.blog_posts.update_one({"slug": req.slug}, {"$set": doc}, upsert=True)
+    return {"message": "Post saved", "slug": req.slug}
+
+@api_router.put("/admin/blog/{slug}")
+async def update_blog_post(slug: str, req: BlogPostRequest, request: Request):
+    await get_admin_user(request)
+    await db.blog_posts.update_one({"slug": slug}, {"$set": {
+        "title": req.title, "content": req.content, "excerpt": req.excerpt,
+        "published": req.published, "updated_at": datetime.now(timezone.utc).isoformat()
+    }})
+    return {"message": "Post updated"}
+
+@api_router.delete("/admin/blog/{slug}")
+async def delete_blog_post(slug: str, request: Request):
+    await get_admin_user(request)
+    await db.blog_posts.delete_one({"slug": slug})
+    return {"message": "Post deleted"}
+
+# ==================== SMTP SETTINGS ====================
+class SmtpSettingsRequest(BaseModel):
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from_email: Optional[str] = None
+    smtp_from_name: Optional[str] = None
+    smtp_use_tls: Optional[bool] = True
+
+@api_router.get("/admin/smtp-settings")
+async def get_smtp_settings(request: Request):
+    await get_admin_user(request)
+    settings = await db.settings.find_one({"key": "smtp"}, {"_id": 0})
+    if settings and "smtp_password" in settings:
+        settings["smtp_password"] = "********" if settings["smtp_password"] else ""
+    return settings or {"key": "smtp"}
+
+@api_router.put("/admin/smtp-settings")
+async def update_smtp_settings(req: SmtpSettingsRequest, request: Request):
+    await get_admin_user(request)
+    updates = {k: v for k, v in req.dict().items() if v is not None}
+    current = await db.settings.find_one({"key": "smtp"})
+    if updates.get("smtp_password") == "********" and current:
+        updates["smtp_password"] = current.get("smtp_password", "")
+    updates["key"] = "smtp"
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.settings.update_one({"key": "smtp"}, {"$set": updates}, upsert=True)
+    return {"message": "SMTP settings saved"}
+
+# ==================== REFERRAL SYSTEM ====================
+@api_router.get("/referral")
+async def get_referral_info(request: Request):
+    user = await get_current_user(request)
+    uid = str(user["_id"])
+    code = user.get("referral_code")
+    if not code:
+        code = f"VT{secrets.token_hex(4).upper()}"
+        await db.users.update_one({"_id": user["_id"]}, {"$set": {"referral_code": code}})
+    referrals = await db.referrals.find({"referrer_id": uid}, {"_id": 0}).to_list(100)
+    return {"referral_code": code, "referrals": referrals,
+            "total_referrals": len(referrals), "successful_referrals": len([r for r in referrals if r.get("status") == "completed"])}
+
+@api_router.post("/referral/apply")
+async def apply_referral(request: Request):
+    body = await request.json()
+    code = body.get("code", "").strip().upper()
+    user = await get_current_user(request)
+    uid = str(user["_id"])
+    if user.get("referred_by"):
+        raise HTTPException(status_code=400, detail="You already used a referral code")
+    referrer = await db.users.find_one({"referral_code": code})
+    if not referrer:
+        raise HTTPException(status_code=404, detail="Invalid referral code")
+    if str(referrer["_id"]) == uid:
+        raise HTTPException(status_code=400, detail="Cannot refer yourself")
+    # Apply reward: both get Standard plan for 1 month
+    now = datetime.now(timezone.utc).isoformat()
+    # Upgrade referee
+    await db.users.update_one({"_id": user["_id"]}, {"$set": {"plan": "standard", "referred_by": code, "referral_reward_until": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()}})
+    # Upgrade referrer (extend or set)
+    await db.users.update_one({"_id": referrer["_id"]}, {"$set": {"plan": "standard", "referral_reward_until": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()}})
+    # Track referral
+    await db.referrals.insert_one({"referrer_id": str(referrer["_id"]), "referee_id": uid,
+                                    "code": code, "status": "completed", "created_at": now})
+    await db.audit_logs.insert_one({"user_id": uid, "action": "referral_applied", "details": f"Code: {code}", "created_at": datetime.now(timezone.utc)})
+    return {"message": "Referral applied! Both you and your friend get 1 month of Standard plan free."}
+
+# ==================== CONTENT PAGES ====================
+CONTENT_PAGES = {
+    "terms": {
+        "title": "Terms of Service",
+        "content": """# Terms of Service
+
+**Last updated: April 2026**
+
+## 1. Acceptance of Terms
+By accessing or using VitalTrack ("Service"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Service.
+
+## 2. Description of Service
+VitalTrack is a health vitals tracking platform that allows users to record, monitor, and visualize personal health data. The Service is for informational and personal tracking purposes only.
+
+## 3. Medical Disclaimer
+VitalTrack is NOT a medical device and does NOT provide medical diagnosis, treatment recommendations, or clinical advice. Always consult a qualified healthcare professional for medical decisions. The data tracked through our platform should not replace professional medical assessments.
+
+## 4. User Accounts
+- You must provide accurate information during registration
+- You are responsible for maintaining account security
+- You must be at least 18 years old to create an account
+- One account per person
+
+## 5. Subscription Plans
+- Free, Standard (₹299/month), and Premium (₹499/month) plans are available
+- Plan features and pricing may change with 30 days notice
+- Subscriptions auto-renew unless cancelled
+- Downgrades take effect at the end of the billing period
+
+## 6. Payment Terms
+- Payments are processed through Razorpay and PayU.In
+- All prices are in Indian Rupees (INR) inclusive of applicable taxes
+- Failed payments may result in service suspension
+
+## 7. Data Privacy
+Your health data is personal and sensitive. We handle it per our Privacy Policy. You retain ownership of your data.
+
+## 8. Acceptable Use
+You agree not to misuse the Service, attempt unauthorized access, or use the platform for any illegal purpose.
+
+## 9. Intellectual Property
+All VitalTrack content, design, and technology are owned by us. You may not copy or redistribute without permission.
+
+## 10. Limitation of Liability
+VitalTrack is provided "as is". We are not liable for any health decisions made based on data tracked through our platform.
+
+## 11. Changes to Terms
+We may update these terms. Continued use constitutes acceptance of updated terms.
+
+## 12. Contact
+For questions about these terms, contact support@vitaltrack.in"""
+    },
+    "privacy": {
+        "title": "Privacy Policy",
+        "content": """# Privacy Policy
+
+**Last updated: April 2026**
+
+## 1. Information We Collect
+
+### Personal Information
+- Name, email address during registration
+- Payment information (processed by Razorpay/PayU.In, not stored by us)
+
+### Health Data
+- Daily vital readings you enter (blood glucose, blood pressure, heart rate, etc.)
+- Notes and tags associated with entries
+
+### Usage Data
+- Login timestamps, feature usage, device information
+
+## 2. How We Use Your Data
+- To provide and improve the tracking service
+- To generate charts, insights, and reports
+- To send reminders and notifications (with your consent)
+- To process payments and manage subscriptions
+
+## 3. Data Storage and Security
+- Data is stored on secure servers with encryption in transit
+- We use industry-standard security practices
+- Access to health data is restricted to authorized personnel only
+
+## 4. Data Sharing
+We do NOT sell your health data. We may share data only:
+- With your explicit consent (e.g., shared reports)
+- To comply with legal requirements
+- With payment processors for transaction processing
+
+## 5. Your Rights
+- **Access**: Request a copy of your data at any time
+- **Export**: Download your data as CSV or PDF
+- **Delete**: Request complete account and data deletion
+- **Correction**: Update or correct your information
+- **Opt-out**: Unsubscribe from non-essential communications
+
+## 6. Cookies
+We use essential cookies for authentication. Analytics cookies are used with consent.
+
+## 7. Data Retention
+- Active accounts: Data retained while account is active
+- Deleted accounts: Data permanently removed within 30 days
+- Payment records: Retained for 7 years per financial regulations
+
+## 8. Children's Privacy
+VitalTrack is not intended for users under 18 years of age.
+
+## 9. Changes to Privacy Policy
+We will notify you of significant changes via email or in-app notification.
+
+## 10. Contact
+Privacy Officer: privacy@vitaltrack.in"""
+    },
+    "refund": {
+        "title": "Refund & Cancellation Policy",
+        "content": """# Refund & Cancellation Policy
+
+**Last updated: April 2026**
+
+## 1. Cancellation Policy
+
+### Free Plan
+No cancellation required. Free plans can be used indefinitely.
+
+### Paid Plans (Standard & Premium)
+- You can cancel your subscription at any time from the Billing page
+- Cancellation takes effect at the end of your current billing period
+- You will retain access to paid features until the period ends
+- After cancellation, your account reverts to the Free plan
+
+## 2. Refund Policy
+
+### Eligibility
+- Full refund within 7 days of initial subscription purchase
+- No refund after 7-day period for the current billing cycle
+- Refunds for annual plans are prorated based on unused months
+
+### How to Request a Refund
+1. Contact support@vitaltrack.in with your account email
+2. Include your transaction ID and reason for refund
+3. Refunds are processed within 5-7 business days
+
+### Non-Refundable
+- Partial month usage
+- Add-on services once activated
+- Referral bonuses already credited
+
+## 3. Downgrade Policy
+- Downgrading from Premium to Standard or Free is available anytime
+- Excess enabled vitals become read-only on downgrade
+- Historical data is always preserved regardless of plan
+
+## 4. Price Changes
+- We will provide 30 days notice before any price increases
+- Existing subscribers are grandfathered at their current price for one billing cycle
+
+## 5. Disputes
+For billing disputes, contact support@vitaltrack.in. We aim to resolve all disputes within 48 hours.
+
+## 6. Contact
+Billing Support: billing@vitaltrack.in"""
+    },
+    "about": {
+        "title": "About VitalTrack",
+        "content": """# About VitalTrack
+
+## Our Mission
+VitalTrack empowers individuals to take control of their health through simple, consistent daily tracking of vital health metrics.
+
+## What We Do
+We provide an intuitive platform to track 12 essential health vitals including blood glucose, blood pressure, heart rate, BMI, and more. Our tools help you visualize trends, generate reports, and share data with healthcare providers.
+
+## Our Approach
+- **Simplicity**: Spreadsheet-style daily entry that takes less than a minute
+- **Insights**: Smart rule-based analysis to spot trends and patterns
+- **Privacy**: Your health data belongs to you. Always.
+- **Accessibility**: Available in English, Hindi, and Telugu
+
+## Important Disclaimer
+VitalTrack is a tracking and informational support tool. It is NOT a medical device and does NOT provide medical diagnosis, treatment, or clinical advice. Always consult qualified healthcare professionals for medical decisions.
+
+## Contact Us
+- Support: support@vitaltrack.in
+- Business: hello@vitaltrack.in"""
+    },
+}
+
+@api_router.get("/content/{page_key}")
+async def get_content_page(page_key: str):
+    custom = await db.content_pages.find_one({"key": page_key}, {"_id": 0})
+    if custom:
+        return custom
+    if page_key in CONTENT_PAGES:
+        return CONTENT_PAGES[page_key]
+    raise HTTPException(status_code=404, detail="Page not found")
+
+@api_router.get("/content")
+async def list_content_pages():
+    pages = list(CONTENT_PAGES.keys())
+    custom = await db.content_pages.find({}, {"_id": 0, "key": 1, "title": 1}).to_list(50)
+    for c in custom:
+        if c["key"] not in pages:
+            pages.append(c["key"])
+    return {"pages": pages}
 
 # ==================== APP CONFIG ====================
 app.add_middleware(

@@ -1,0 +1,60 @@
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import api from '@/lib/api';
+import { Heartbeat, ArrowLeft } from '@phosphor-icons/react';
+
+export default function ContentPage() {
+  const { pageKey } = useParams();
+  const [page, setPage] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get(`/content/${pageKey}`).then(res => setPage(res.data)).catch(() => setPage(null)).finally(() => setLoading(false));
+  }, [pageKey]);
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#FAFAF9] flex items-center justify-center">
+      <div className="animate-pulse w-full max-w-3xl px-6"><div className="h-8 bg-[#EAE7E1] rounded w-48 mb-6" />{[1,2,3,4].map(i => <div key={i} className="h-4 bg-[#EAE7E1] rounded mb-3 w-full" />)}</div>
+    </div>
+  );
+
+  if (!page) return (
+    <div className="min-h-screen bg-[#FAFAF9] flex items-center justify-center">
+      <div className="text-center"><p className="text-[#6E6E6A]">Page not found</p><Link to="/" className="text-[#2D4A3E] underline text-sm mt-2 block">Go Home</Link></div>
+    </div>
+  );
+
+  // Simple markdown-to-HTML renderer
+  const renderContent = (md) => {
+    return md
+      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium text-[#2C2C2A] mt-6 mb-2" style="font-family:Outfit">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-medium text-[#2C2C2A] mt-8 mb-3" style="font-family:Outfit">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-medium text-[#2C2C2A] mb-4" style="font-family:Outfit">$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-[#2C2C2A]">$1</strong>')
+      .replace(/^- (.*$)/gim, '<li class="text-sm text-[#6E6E6A] ml-4 mb-1 list-disc">$1</li>')
+      .replace(/^\d+\. (.*$)/gim, '<li class="text-sm text-[#6E6E6A] ml-4 mb-1 list-decimal">$1</li>')
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>');
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAFAF9]">
+      <nav className="fixed top-0 w-full z-50 glass-nav border-b border-[#EAE7E1]">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between h-16">
+          <Link to="/" className="flex items-center gap-2.5">
+            <Heartbeat weight="duotone" className="w-7 h-7 text-[#2D4A3E]" />
+            <span className="text-lg font-semibold text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>VitalTrack</span>
+          </Link>
+          <Link to="/" className="flex items-center gap-1.5 text-sm text-[#6E6E6A] hover:text-[#2C2C2A]">
+            <ArrowLeft className="w-4 h-4" /> Back
+          </Link>
+        </div>
+      </nav>
+      <div className="pt-28 pb-16 px-6 md:px-12 max-w-3xl mx-auto">
+        <div className="bg-white border border-[#EAE7E1] rounded-2xl p-8 md:p-12 shadow-[0_4px_24px_rgba(0,0,0,0.02)]"
+          data-testid={`content-page-${pageKey}`}
+          dangerouslySetInnerHTML={{ __html: renderContent(page.content) }} />
+      </div>
+    </div>
+  );
+}
