@@ -1,0 +1,808 @@
+{
+  "timestamp": "2026-04-10T11:46:34.329657",
+  "total_tests": 23,
+  "passed_tests": 23,
+  "success_rate": 100.0,
+  "test_results": [
+    {
+      "test": "User Registration",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "email": "test_114629@example.com",
+        "name": "Test User",
+        "role": "user",
+        "plan": "free",
+        "enabled_vitals": [],
+        "settings": {
+          "language": "en"
+        },
+        "created_at": "2026-04-10T11:46:32.381016+00:00",
+        "updated_at": "2026-04-10T11:46:32.381019+00:00",
+        "id": "69d8e3187569761412649f95"
+      }
+    },
+    {
+      "test": "User Login",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "email": "test_114629@example.com",
+        "name": "Test User",
+        "role": "user",
+        "plan": "free",
+        "enabled_vitals": [],
+        "settings": {
+          "language": "en"
+        },
+        "created_at": "2026-04-10T11:46:32.381000",
+        "updated_at": "2026-04-10T11:46:32.381000",
+        "id": "69d8e3187569761412649f95"
+      }
+    },
+    {
+      "test": "Admin Login",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "email": "admin@example.com",
+        "name": "Admin",
+        "role": "super_admin",
+        "plan": "premium",
+        "enabled_vitals": [
+          "blood_glucose",
+          "blood_oxygen",
+          "blood_pressure",
+          "bmi",
+          "body_temperature",
+          "heart_rate",
+          "respiratory_rate",
+          "sleep_duration",
+          "physical_activity",
+          "waist_circumference",
+          "weight",
+          "hydration"
+        ],
+        "settings": {
+          "language": "en"
+        },
+        "created_at": "2026-04-10T11:17:45.903000",
+        "updated_at": "2026-04-10T11:17:45.903000",
+        "last_login": "2026-04-10T11:44:22.883894+00:00",
+        "id": "69d8dc59f5f92d3c83dfc852"
+      }
+    },
+    {
+      "test": "Get Current User",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "email": "admin@example.com",
+        "name": "Admin",
+        "role": "super_admin",
+        "plan": "premium",
+        "enabled_vitals": [
+          "blood_glucose",
+          "blood_oxygen",
+          "blood_pressure",
+          "bmi",
+          "body_temperature",
+          "heart_rate",
+          "respiratory_rate",
+          "sleep_duration",
+          "physical_activity",
+          "waist_circumference",
+          "weight",
+          "hydration"
+        ],
+        "settings": {
+          "language": "en"
+        },
+        "created_at": "2026-04-10T11:17:45.903000",
+        "updated_at": "2026-04-10T11:17:45.903000",
+        "last_login": "2026-04-10T11:46:32.992057+00:00",
+        "id": "69d8dc59f5f92d3c83dfc852"
+      }
+    },
+    {
+      "test": "User Logout",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "message": "Logged out"
+      }
+    },
+    {
+      "test": "Get Vital Types",
+      "success": true,
+      "details": "",
+      "response_data": [
+        {
+          "key": "blood_glucose",
+          "name": "Blood Glucose",
+          "unit": "mg/dL",
+          "min": 20,
+          "max": 600,
+          "normal_min": 70,
+          "normal_max": 140,
+          "chart_type": "line",
+          "category": "metabolic"
+        },
+        {
+          "key": "blood_oxygen",
+          "name": "Blood Oxygen",
+          "unit": "%",
+          "min": 70,
+          "max": 100,
+          "normal_min": 95,
+          "normal_max": 100,
+          "chart_type": "area",
+          "category": "respiratory"
+        },
+        {
+          "key": "blood_pressure",
+          "name": "Blood Pressure",
+          "unit": "mmHg",
+          "min": 60,
+          "max": 250,
+          "normal_min": 90,
+          "normal_max": 140,
+          "chart_type": "dual_line",
+          "category": "cardiovascular",
+          "has_dual_value": true,
+          "value2_label": "Diastolic",
+          "value2_min": 40,
+          "value2_max": 150,
+          "value2_normal_min": 60,
+          "value2_normal_max": 90
+        },
+        {
+          "key": "bmi",
+          "name": "BMI",
+          "unit": "kg/m2",
+          "min": 10,
+          "max": 60,
+          "normal_min": 18.5,
+          "normal_max": 24.9,
+          "chart_type": "line",
+          "category": "body"
+        },
+        {
+          "key": "body_temperature",
+          "name": "Body Temperature",
+          "unit": "F",
+          "min": 90,
+          "max": 110,
+          "normal_min": 97,
+          "normal_max": 99.5,
+          "chart_type": "line",
+          "category": "general"
+        },
+        {
+          "key": "heart_rate",
+          "name": "Heart Rate",
+          "unit": "bpm",
+          "min": 30,
+          "max": 250,
+          "normal_min": 60,
+          "normal_max": 100,
+          "chart_type": "line",
+          "category": "cardiovascular"
+        },
+        {
+          "key": "respiratory_rate",
+          "name": "Respiratory Rate",
+          "unit": "breaths/min",
+          "min": 5,
+          "max": 60,
+          "normal_min": 12,
+          "normal_max": 20,
+          "chart_type": "line",
+          "category": "respiratory"
+        },
+        {
+          "key": "sleep_duration",
+          "name": "Sleep Duration",
+          "unit": "hours",
+          "min": 0,
+          "max": 24,
+          "normal_min": 7,
+          "normal_max": 9,
+          "chart_type": "bar",
+          "category": "lifestyle"
+        },
+        {
+          "key": "physical_activity",
+          "name": "Physical Activity",
+          "unit": "minutes",
+          "min": 0,
+          "max": 1440,
+          "normal_min": 30,
+          "normal_max": 120,
+          "chart_type": "bar",
+          "category": "lifestyle"
+        },
+        {
+          "key": "waist_circumference",
+          "name": "Waist Circumference",
+          "unit": "cm",
+          "min": 40,
+          "max": 200,
+          "normal_min": 60,
+          "normal_max": 102,
+          "chart_type": "line",
+          "category": "body"
+        },
+        {
+          "key": "weight",
+          "name": "Weight",
+          "unit": "kg",
+          "min": 20,
+          "max": 300,
+          "normal_min": 50,
+          "normal_max": 100,
+          "chart_type": "line",
+          "category": "body"
+        },
+        {
+          "key": "hydration",
+          "name": "Hydration Level",
+          "unit": "glasses",
+          "min": 0,
+          "max": 30,
+          "normal_min": 8,
+          "normal_max": 15,
+          "chart_type": "bar",
+          "category": "lifestyle"
+        }
+      ]
+    },
+    {
+      "test": "Vital Types Count (Expected: 12)",
+      "success": true,
+      "details": "",
+      "response_data": null
+    },
+    {
+      "test": "Get Enabled Vitals",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "enabled_vitals": [
+          "blood_glucose",
+          "blood_oxygen",
+          "blood_pressure",
+          "bmi",
+          "body_temperature",
+          "heart_rate",
+          "respiratory_rate",
+          "sleep_duration",
+          "physical_activity",
+          "waist_circumference",
+          "weight",
+          "hydration"
+        ],
+        "plan": "premium",
+        "vital_limit": 12
+      }
+    },
+    {
+      "test": "Enable Vital",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "enabled_vitals": [
+          "blood_glucose",
+          "blood_oxygen",
+          "blood_pressure",
+          "bmi",
+          "body_temperature",
+          "heart_rate",
+          "respiratory_rate",
+          "sleep_duration",
+          "physical_activity",
+          "waist_circumference",
+          "weight",
+          "hydration"
+        ],
+        "message": "Already enabled"
+      }
+    },
+    {
+      "test": "Disable Vital",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "enabled_vitals": [
+          "blood_oxygen",
+          "blood_pressure",
+          "bmi",
+          "body_temperature",
+          "heart_rate",
+          "respiratory_rate",
+          "sleep_duration",
+          "physical_activity",
+          "waist_circumference",
+          "weight",
+          "hydration"
+        ],
+        "message": "Vital disabled"
+      }
+    },
+    {
+      "test": "Create Entry",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "message": "Entry saved",
+        "entry": {
+          "user_id": "69d8dc59f5f92d3c83dfc852",
+          "vital_key": "blood_glucose",
+          "date": "2026-04-10",
+          "value": 95.5,
+          "value2": null,
+          "notes": "Morning reading",
+          "updated_at": "2026-04-10T11:46:33.690303+00:00"
+        }
+      }
+    },
+    {
+      "test": "Get Entries",
+      "success": true,
+      "details": "",
+      "response_data": [
+        {
+          "user_id": "69d8dc59f5f92d3c83dfc852",
+          "vital_key": "blood_glucose",
+          "date": "2026-04-10",
+          "created_at": "2026-04-10T11:46:33.690338+00:00",
+          "notes": "Morning reading",
+          "updated_at": "2026-04-10T11:46:33.690303+00:00",
+          "value": 95.5,
+          "value2": null
+        }
+      ]
+    },
+    {
+      "test": "Bulk Create Entries",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "saved": 2,
+        "errors": []
+      }
+    },
+    {
+      "test": "Get Chart Data",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "entries": [
+          {
+            "vital_key": "blood_glucose",
+            "date": "2026-04-08",
+            "user_id": "69d8dc59f5f92d3c83dfc852",
+            "created_at": "2026-04-10T11:46:33.802406+00:00",
+            "notes": null,
+            "updated_at": "2026-04-10T11:46:33.802370+00:00",
+            "value": 92.5,
+            "value2": null
+          },
+          {
+            "user_id": "69d8dc59f5f92d3c83dfc852",
+            "vital_key": "blood_glucose",
+            "date": "2026-04-09",
+            "created_at": "2026-04-10T11:46:33.801629+00:00",
+            "notes": null,
+            "updated_at": "2026-04-10T11:46:33.801605+00:00",
+            "value": 88.0,
+            "value2": null
+          },
+          {
+            "user_id": "69d8dc59f5f92d3c83dfc852",
+            "vital_key": "blood_glucose",
+            "date": "2026-04-10",
+            "created_at": "2026-04-10T11:46:33.690338+00:00",
+            "notes": "Morning reading",
+            "updated_at": "2026-04-10T11:46:33.690303+00:00",
+            "value": 95.5,
+            "value2": null
+          }
+        ],
+        "vital_type": {
+          "key": "blood_glucose",
+          "name": "Blood Glucose",
+          "unit": "mg/dL",
+          "min": 20,
+          "max": 600,
+          "normal_min": 70,
+          "normal_max": 140,
+          "chart_type": "line",
+          "category": "metabolic"
+        },
+        "stats": {
+          "min": 88.0,
+          "max": 95.5,
+          "avg": 92.0,
+          "count": 3
+        },
+        "start_date": "2026-04-03",
+        "end_date": "2026-04-10"
+      }
+    },
+    {
+      "test": "Get Insights",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "insights": [
+          {
+            "vital_key": "blood_oxygen",
+            "type": "warning",
+            "message": "No Blood Oxygen entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "blood_pressure",
+            "type": "warning",
+            "message": "No Blood Pressure entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "bmi",
+            "type": "warning",
+            "message": "No BMI entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "body_temperature",
+            "type": "warning",
+            "message": "No Body Temperature entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "heart_rate",
+            "type": "warning",
+            "message": "No Heart Rate entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "respiratory_rate",
+            "type": "warning",
+            "message": "No Respiratory Rate entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "sleep_duration",
+            "type": "warning",
+            "message": "No Sleep Duration entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "physical_activity",
+            "type": "warning",
+            "message": "No Physical Activity entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "waist_circumference",
+            "type": "warning",
+            "message": "No Waist Circumference entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "weight",
+            "type": "warning",
+            "message": "No Weight entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "hydration",
+            "type": "warning",
+            "message": "No Hydration Level entries this week. Start tracking!"
+          },
+          {
+            "vital_key": "blood_glucose",
+            "type": "info",
+            "message": "4 missed Blood Glucose entries this week"
+          },
+          {
+            "vital_key": "blood_glucose",
+            "type": "success",
+            "message": "Your Blood Glucose is within normal range"
+          }
+        ]
+      }
+    },
+    {
+      "test": "Get Plans",
+      "success": true,
+      "details": "",
+      "response_data": [
+        {
+          "key": "free",
+          "name": "Free",
+          "price": 0,
+          "price_yearly": 0,
+          "currency": "INR",
+          "vital_limit": 2,
+          "chart_history_days": 7,
+          "csv_export": true,
+          "pdf_export": false,
+          "sharing": false,
+          "features": [
+            "Track any 2 vitals",
+            "7-day chart history",
+            "Basic CSV export",
+            "Basic reminders"
+          ]
+        },
+        {
+          "key": "standard",
+          "name": "Standard",
+          "price": 299,
+          "price_yearly": 2999,
+          "currency": "INR",
+          "vital_limit": 6,
+          "chart_history_days": 365,
+          "csv_export": true,
+          "pdf_export": true,
+          "sharing": true,
+          "features": [
+            "Track any 6 vitals",
+            "Full 1-year history",
+            "CSV & PDF export",
+            "Shareable reports",
+            "Advanced reminders",
+            "Better analytics"
+          ]
+        },
+        {
+          "key": "premium",
+          "name": "Premium",
+          "price": 599,
+          "price_yearly": 5999,
+          "currency": "INR",
+          "vital_limit": 12,
+          "chart_history_days": -1,
+          "csv_export": true,
+          "pdf_export": true,
+          "sharing": true,
+          "features": [
+            "Track all 12 vitals",
+            "Unlimited history",
+            "All export formats",
+            "Full sharing",
+            "Priority support",
+            "Advanced analytics"
+          ]
+        }
+      ]
+    },
+    {
+      "test": "Plans Count (Expected: 3)",
+      "success": true,
+      "details": "",
+      "response_data": null
+    },
+    {
+      "test": "Get Subscription",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "plan": {
+          "key": "premium",
+          "name": "Premium",
+          "price": 599,
+          "price_yearly": 5999,
+          "currency": "INR",
+          "vital_limit": 12,
+          "chart_history_days": -1,
+          "csv_export": true,
+          "pdf_export": true,
+          "sharing": true,
+          "features": [
+            "Track all 12 vitals",
+            "Unlimited history",
+            "All export formats",
+            "Full sharing",
+            "Priority support",
+            "Advanced analytics"
+          ]
+        },
+        "subscription": null,
+        "enabled_vitals": [
+          "blood_oxygen",
+          "blood_pressure",
+          "bmi",
+          "body_temperature",
+          "heart_rate",
+          "respiratory_rate",
+          "sleep_duration",
+          "physical_activity",
+          "waist_circumference",
+          "weight",
+          "hydration",
+          "blood_glucose"
+        ],
+        "vital_limit": 12
+      }
+    },
+    {
+      "test": "Change Subscription (MOCKED)",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "message": "Plan changed to Standard",
+        "plan": {
+          "key": "standard",
+          "name": "Standard",
+          "price": 299,
+          "price_yearly": 2999,
+          "currency": "INR",
+          "vital_limit": 6,
+          "chart_history_days": 365,
+          "csv_export": true,
+          "pdf_export": true,
+          "sharing": true,
+          "features": [
+            "Track any 6 vitals",
+            "Full 1-year history",
+            "CSV & PDF export",
+            "Shareable reports",
+            "Advanced reminders",
+            "Better analytics"
+          ]
+        },
+        "enabled_vitals": [
+          "blood_oxygen",
+          "blood_pressure",
+          "bmi",
+          "body_temperature",
+          "heart_rate",
+          "respiratory_rate"
+        ]
+      }
+    },
+    {
+      "test": "CSV Export",
+      "success": true,
+      "details": "",
+      "response_data": null
+    },
+    {
+      "test": "Admin Dashboard",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "total_users": 3,
+        "free_users": 2,
+        "standard_users": 1,
+        "premium_users": 0,
+        "total_entries": 3,
+        "total_exports": 1,
+        "entries_today": 1,
+        "vital_usage": {
+          "blood_glucose": 3
+        },
+        "mrr": 299,
+        "arr": 3588
+      }
+    },
+    {
+      "test": "Admin Users List",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "users": [
+          {
+            "email": "test_114629@example.com",
+            "name": "Test User",
+            "role": "user",
+            "plan": "free",
+            "enabled_vitals": [],
+            "settings": {
+              "language": "en"
+            },
+            "created_at": "2026-04-10T11:46:32.381000",
+            "updated_at": "2026-04-10T11:46:32.381000",
+            "last_login": "2026-04-10T11:46:32.713761+00:00",
+            "id": "69d8e3187569761412649f95"
+          },
+          {
+            "email": "alttyjoy@gmail.com",
+            "name": "Altty",
+            "role": "user",
+            "plan": "free",
+            "enabled_vitals": [],
+            "settings": {
+              "language": "en"
+            },
+            "created_at": "2026-04-10T11:45:30.803000",
+            "updated_at": "2026-04-10T11:45:30.803000",
+            "id": "69d8e2da7569761412649f93"
+          },
+          {
+            "email": "admin@example.com",
+            "name": "Admin",
+            "role": "super_admin",
+            "plan": "standard",
+            "enabled_vitals": [
+              "blood_oxygen",
+              "blood_pressure",
+              "bmi",
+              "body_temperature",
+              "heart_rate",
+              "respiratory_rate"
+            ],
+            "settings": {
+              "language": "en"
+            },
+            "created_at": "2026-04-10T11:17:45.903000",
+            "updated_at": "2026-04-10T11:46:34.060861+00:00",
+            "last_login": "2026-04-10T11:46:33.373704+00:00",
+            "id": "69d8dc59f5f92d3c83dfc852"
+          }
+        ],
+        "total": 3,
+        "skip": 0,
+        "limit": 10
+      }
+    },
+    {
+      "test": "Admin Analytics",
+      "success": true,
+      "details": "",
+      "response_data": {
+        "daily_entries": [
+          {
+            "date": "2026-04-08",
+            "count": 1
+          },
+          {
+            "date": "2026-04-09",
+            "count": 1
+          },
+          {
+            "date": "2026-04-10",
+            "count": 1
+          }
+        ],
+        "registrations": [
+          {
+            "date": "2026-04-10",
+            "count": 3
+          }
+        ],
+        "audit_logs": [
+          {
+            "user_id": "69d8dc59f5f92d3c83dfc852",
+            "action": "plan_change",
+            "details": "premium -> standard",
+            "created_at": "2026-04-10T11:46:34.072000"
+          },
+          {
+            "user_id": "69d8dc59f5f92d3c83dfc852",
+            "action": "login",
+            "created_at": "2026-04-10T11:46:33.374000"
+          },
+          {
+            "user_id": "69d8dc59f5f92d3c83dfc852",
+            "action": "login",
+            "created_at": "2026-04-10T11:46:32.992000"
+          },
+          {
+            "user_id": "69d8e3187569761412649f95",
+            "action": "login",
+            "created_at": "2026-04-10T11:46:32.714000"
+          },
+          {
+            "user_id": "69d8e3187569761412649f95",
+            "action": "register",
+            "created_at": "2026-04-10T11:46:32.382000"
+          },
+          {
+            "user_id": "69d8e2da7569761412649f93",
+            "action": "register",
+            "created_at": "2026-04-10T11:45:30.805000"
+          },
+          {
+            "user_id": "69d8dc59f5f92d3c83dfc852",
+            "action": "login",
+            "created_at": "2026-04-10T11:44:22.886000"
+          }
+        ]
+      }
+    }
+  ]
+}

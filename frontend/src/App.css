@@ -1,34 +1,72 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* VitalTrack Custom Styles */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+.tracker-table {
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+.tracker-table th,
+.tracker-table td {
+  white-space: nowrap;
 }
 
-.App-link {
-    color: #61dafb;
+.tracker-table .sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: white;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+.tracker-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #FAFAF9;
+}
+
+.tracker-table thead th:first-child {
+  z-index: 15;
+  left: 0;
+}
+
+.vital-input {
+  width: 80px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  padding: 6px 4px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.15s ease;
+}
+
+.vital-input:hover {
+  background: #FAFAF9;
+}
+
+.vital-input:focus {
+  outline: none;
+  background: white;
+  box-shadow: 0 0 0 2px rgba(45, 74, 62, 0.2);
+}
+
+.vital-input.status-normal { color: #588157; }
+.vital-input.status-warning { color: #B8860B; }
+.vital-input.status-critical { color: #D96C4E; }
+
+/* Smooth page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.3s ease-out;
 }
