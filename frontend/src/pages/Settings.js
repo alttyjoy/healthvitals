@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import api, { formatApiError } from '@/lib/api';
 import { VITAL_TYPES, VITAL_MAP } from '@/lib/vitals';
 import { Button } from '@/components/ui/button';
@@ -7,34 +8,60 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { User, Lock, Heartbeat, Gear } from '@phosphor-icons/react';
+import { User, Heartbeat, Gear, Moon, Globe, LinkSimple, Lock, Copy, Trash, Eye } from '@phosphor-icons/react';
+
+const LANGUAGES = [
+  { code: 'en', name: 'English', native: 'English' },
+  { code: 'hi', name: 'Hindi', native: 'हिन्दी' },
+  { code: 'te', name: 'Telugu', native: 'తెలుగు' },
+];
 
 export default function Settings() {
   const { user, refreshUser } = useAuth();
+  const { darkMode, toggleDarkMode, language, setLanguage, t } = useTheme();
   const [name, setName] = useState(user?.name || '');
   const [saving, setSaving] = useState(false);
   const [enabledVitals, setEnabledVitals] = useState([]);
   const [vitalLimit, setVitalLimit] = useState(2);
   const [togglingVital, setTogglingVital] = useState(null);
+  // Shared reports
+  const [sharedReports, setSharedReports] = useState([]);
+  const [showCreateShare, setShowCreateShare] = useState(false);
+  const [shareVitals, setShareVitals] = useState([]);
+  const [shareStart, setShareStart] = useState(() => new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0]);
+  const [shareEnd, setShareEnd] = useState(() => new Date().toISOString().split('T')[0]);
+  const [sharePassword, setSharePassword] = useState('');
+  const [shareDays, setShareDays] = useState(7);
+  const [creatingShare, setCreatingShare] = useState(false);
 
   useEffect(() => {
     api.get('/vitals/enabled').then(res => {
       setEnabledVitals(res.data.enabled_vitals || []);
       setVitalLimit(res.data.vital_limit || 2);
     }).catch(() => {});
+    loadSharedReports();
   }, []);
+
+  const loadSharedReports = async () => {
+    try {
+      const { data } = await api.get('/shared-reports');
+      setSharedReports(data || []);
+    } catch { /* ignore */ }
+  };
 
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
       await api.put('/profile', { name });
       await refreshUser();
-      toast.success('Profile updated');
-    } catch (err) {
-      toast.error(formatApiError(err));
-    } finally { setSaving(false); }
+      toast.success(t('save_profile') + ' ✓');
+    } catch (err) { toast.error(formatApiError(err)); }
+    finally { setSaving(false); }
   };
 
   const handleToggleVital = async (vk, enabled) => {
@@ -44,44 +71,117 @@ export default function Settings() {
       setEnabledVitals(res.data.enabled_vitals);
       await refreshUser();
       toast.success(res.data.message);
-    } catch (err) {
-      toast.error(formatApiError(err));
-    } finally { setTogglingVital(null); }
+    } catch (err) { toast.error(formatApiError(err)); }
+    finally { setTogglingVital(null); }
   };
+
+  const handleCreateSharedReport = async () => {
+    if (shareVitals.length === 0) { toast.error('Select at least one vital'); return; }
+    setCreatingShare(true);
+    try {
+      const { data } = await api.post('/shared-reports', {
+        vital_keys: shareVitals, start_date: shareStart, end_date: shareEnd,
+        expires_days: shareDays, password: sharePassword || null,
+      });
+      const link = `${window.location.origin}/shared/${data.token}`;
+      navigator.clipboard?.writeText(link);
+      toast.success('Shared report created! Link copied to clipboard.');
+      setShowCreateShare(false);
+      setSharePassword('');
+      setShareVitals([]);
+      loadSharedReports();
+    } catch (err) { toast.error(formatApiError(err)); }
+    finally { setCreatingShare(false); }
+  };
+
+  const revokeShare = async (id) => {
+    try {
+      await api.delete(`/shared-reports/${id}`);
+      toast.success('Share link revoked');
+      loadSharedReports();
+    } catch (err) { toast.error(formatApiError(err)); }
+  };
+
+  const copyShareLink = (token) => {
+    const link = `${window.location.origin}/shared/${token}`;
+    navigator.clipboard?.writeText(link);
+    toast.success('Link copied!');
+  };
+
+  const plan = user?.plan || 'free';
+  const canShare = plan !== 'free';
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 animate-fade-in-up" data-testid="settings-page">
       <div>
-        <h1 className="text-2xl font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Settings</h1>
-        <p className="text-sm text-[#6E6E6A]">Manage your profile and vital preferences</p>
+        <h1 className="text-2xl font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{t('settings')}</h1>
+        <p className="text-sm text-[#6E6E6A]">Manage your profile, vitals, and preferences</p>
       </div>
 
       {/* Profile */}
       <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
         <div className="flex items-center gap-3 mb-5">
           <User weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
-          <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Profile</h2>
+          <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{t('profile')}</h2>
         </div>
         <div className="space-y-4">
           <div>
-            <Label className="text-sm text-[#2C2C2A]">Full Name</Label>
+            <Label className="text-sm text-[#2C2C2A]">{t('full_name')}</Label>
             <Input value={name} onChange={e => setName(e.target.value)} data-testid="settings-name-input"
-              className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9] focus:ring-[#2D4A3E]/20 focus:border-[#2D4A3E]" />
+              className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" />
           </div>
           <div>
-            <Label className="text-sm text-[#2C2C2A]">Email</Label>
+            <Label className="text-sm text-[#2C2C2A]">{t('email')}</Label>
             <Input value={user?.email || ''} disabled className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9] opacity-60" />
           </div>
           <div className="flex items-center gap-3">
-            <Badge className="bg-[#2D4A3E]/10 text-[#2D4A3E] border-0">
-              {user?.plan?.charAt(0).toUpperCase() + user?.plan?.slice(1)} Plan
-            </Badge>
+            <Badge className="bg-[#2D4A3E]/10 text-[#2D4A3E] border-0">{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan</Badge>
             <Badge className="bg-[#EAE7E1] text-[#6E6E6A] border-0">{user?.role}</Badge>
           </div>
           <Button onClick={handleSaveProfile} disabled={saving} data-testid="settings-save-profile-btn"
             className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-6">
-            {saving ? 'Saving...' : 'Save Profile'}
+            {saving ? 'Saving...' : t('save_profile')}
           </Button>
+        </div>
+      </div>
+
+      {/* Preferences: Dark Mode + Language */}
+      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <div className="flex items-center gap-3 mb-5">
+          <Gear weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+          <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Preferences</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center gap-3">
+              <Moon weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+              <div>
+                <p className="text-sm font-medium text-[#2C2C2A]">{t('dark_mode')}</p>
+                <p className="text-xs text-[#6E6E6A]">Switch between light and dark theme</p>
+              </div>
+            </div>
+            <Switch checked={darkMode} onCheckedChange={toggleDarkMode} data-testid="dark-mode-toggle" />
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center gap-3">
+              <Globe weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+              <div>
+                <p className="text-sm font-medium text-[#2C2C2A]">{t('language')}</p>
+                <p className="text-xs text-[#6E6E6A]">Choose your preferred language</p>
+              </div>
+            </div>
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger className="w-[160px] rounded-xl border-[#EAE7E1]" data-testid="language-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map(l => (
+                  <SelectItem key={l.code} value={l.code}>{l.native} ({l.name})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -90,14 +190,14 @@ export default function Settings() {
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
             <Heartbeat weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
-            <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Manage Vitals</h2>
+            <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{t('manage_vitals')}</h2>
           </div>
           <Badge className="bg-[#FAFAF9] text-[#6E6E6A] border border-[#EAE7E1]">
             {enabledVitals.length} / {vitalLimit} enabled
           </Badge>
         </div>
         <p className="text-sm text-[#6E6E6A] mb-4">
-          Your {user?.plan} plan allows up to {vitalLimit} vitals. Toggle the ones you want to track.
+          Your {plan} plan allows up to {vitalLimit} vitals. Toggle the ones you want to track.
         </p>
         <div className="space-y-1">
           {VITAL_TYPES.map(vital => {
@@ -123,9 +223,108 @@ export default function Settings() {
           })}
         </div>
         {enabledVitals.length >= vitalLimit && (
-          <p className="text-xs text-[#D96C4E] mt-3">
-            You've reached your plan limit. Upgrade to enable more vitals.
-          </p>
+          <p className="text-xs text-[#D96C4E] mt-3">You've reached your plan limit. Upgrade to enable more vitals.</p>
+        )}
+      </div>
+
+      {/* Shared Reports */}
+      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <LinkSimple weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+            <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{t('shared_reports')}</h2>
+          </div>
+          {canShare && (
+            <Dialog open={showCreateShare} onOpenChange={setShowCreateShare}>
+              <DialogTrigger asChild>
+                <Button className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-5 text-sm" data-testid="create-shared-report-btn">
+                  {t('create_shared_report')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle style={{ fontFamily: 'Outfit' }}>{t('create_shared_report')}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <Label className="text-sm">Select Vitals</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto">
+                      {enabledVitals.map(vk => (
+                        <label key={vk} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <Checkbox checked={shareVitals.includes(vk)} onCheckedChange={() => setShareVitals(prev => prev.includes(vk) ? prev.filter(v => v !== vk) : [...prev, vk])} />
+                          {VITAL_MAP[vk]?.name || vk}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm">Start Date</Label>
+                      <Input type="date" value={shareStart} onChange={e => setShareStart(e.target.value)} className="mt-1 rounded-xl" />
+                    </div>
+                    <div>
+                      <Label className="text-sm">End Date</Label>
+                      <Input type="date" value={shareEnd} onChange={e => setShareEnd(e.target.value)} className="mt-1 rounded-xl" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm flex items-center gap-1"><Lock className="w-3 h-3" /> Password (optional)</Label>
+                    <Input type="password" value={sharePassword} onChange={e => setSharePassword(e.target.value)}
+                      placeholder="Leave empty for no password" className="mt-1 rounded-xl" data-testid="share-password-input" />
+                  </div>
+                  <div>
+                    <Label className="text-sm">{t('expires_in')}</Label>
+                    <Select value={String(shareDays)} onValueChange={v => setShareDays(parseInt(v))}>
+                      <SelectTrigger className="mt-1 rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 day</SelectItem>
+                        <SelectItem value="7">7 days</SelectItem>
+                        <SelectItem value="30">30 days</SelectItem>
+                        <SelectItem value="90">90 days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleCreateSharedReport} disabled={creatingShare} data-testid="create-share-submit-btn"
+                    className="w-full rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white">
+                    {creatingShare ? 'Creating...' : 'Create & Copy Link'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+
+        {!canShare ? (
+          <p className="text-sm text-[#6E6E6A]">Sharing requires Standard or Premium plan. Upgrade to share reports.</p>
+        ) : sharedReports.length === 0 ? (
+          <p className="text-sm text-[#6E6E6A]">No shared reports yet. Create one to share your health data securely.</p>
+        ) : (
+          <div className="space-y-2">
+            {sharedReports.filter(r => r.active).map(report => (
+              <div key={report.id} className="flex items-center justify-between py-3 px-4 rounded-xl border border-[#EAE7E1] hover:bg-[#FAFAF9]">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-[#2C2C2A] truncate">
+                      {(report.vital_keys || []).map(vk => VITAL_MAP[vk]?.name || vk).join(', ')}
+                    </span>
+                    {report.has_password && <Lock className="w-3.5 h-3.5 text-[#6E6E6A]" />}
+                  </div>
+                  <p className="text-xs text-[#6E6E6A]">{report.start_date} to {report.end_date}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => copyShareLink(report.token)} className="h-8 w-8" data-testid={`copy-share-${report.id}`}>
+                    <Copy className="w-4 h-4 text-[#6E6E6A]" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => window.open(`/shared/${report.token}`, '_blank')} className="h-8 w-8">
+                    <Eye className="w-4 h-4 text-[#6E6E6A]" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => revokeShare(report.id)} className="h-8 w-8" data-testid={`revoke-share-${report.id}`}>
+                    <Trash className="w-4 h-4 text-[#D96C4E]" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

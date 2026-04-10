@@ -20,7 +20,7 @@ const features = [
 const plans = [
   { key: 'free', name: 'Free', price: 0, period: 'forever', vitals: 2, features: ['Track any 2 vitals', '7-day chart history', 'Basic CSV export', 'Basic reminders'], popular: false },
   { key: 'standard', name: 'Standard', price: 299, period: '/month', vitals: 6, features: ['Track any 6 vitals', 'Full 1-year history', 'CSV & PDF export', 'Shareable reports', 'Advanced reminders'], popular: true },
-  { key: 'premium', name: 'Premium', price: 599, period: '/month', vitals: 12, features: ['Track all 12 vitals', 'Unlimited history', 'All export formats', 'Full sharing', 'Priority support', 'Advanced analytics'], popular: false },
+  { key: 'premium', name: 'Premium', price: 499, period: '/month', vitals: 12, features: ['Track all 12 vitals', 'Unlimited history', 'All export formats', 'Full sharing', 'Priority support', 'Advanced analytics'], popular: false },
 ];
 
 const faqs = [

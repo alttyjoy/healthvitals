@@ -20,6 +20,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt as pyjwt
+import razorpay
+import hashlib
+import hmac
 
 # MongoDB
 mongo_url = os.environ['MONGO_URL']
@@ -54,10 +57,88 @@ VITAL_TYPES = [
 PLANS = [
     {"key": "free", "name": "Free", "price": 0, "price_yearly": 0, "currency": "INR", "vital_limit": 2, "chart_history_days": 7, "csv_export": True, "pdf_export": False, "sharing": False, "features": ["Track any 2 vitals", "7-day chart history", "Basic CSV export", "Basic reminders"]},
     {"key": "standard", "name": "Standard", "price": 299, "price_yearly": 2999, "currency": "INR", "vital_limit": 6, "chart_history_days": 365, "csv_export": True, "pdf_export": True, "sharing": True, "features": ["Track any 6 vitals", "Full 1-year history", "CSV & PDF export", "Shareable reports", "Advanced reminders", "Better analytics"]},
-    {"key": "premium", "name": "Premium", "price": 599, "price_yearly": 5999, "currency": "INR", "vital_limit": 12, "chart_history_days": -1, "csv_export": True, "pdf_export": True, "sharing": True, "features": ["Track all 12 vitals", "Unlimited history", "All export formats", "Full sharing", "Priority support", "Advanced analytics"]},
+    {"key": "premium", "name": "Premium", "price": 499, "price_yearly": 4999, "currency": "INR", "vital_limit": 12, "chart_history_days": -1, "csv_export": True, "pdf_export": True, "sharing": True, "features": ["Track all 12 vitals", "Unlimited history", "All export formats", "Full sharing", "Priority support", "Advanced analytics"]},
 ]
 
 VITAL_KEYS = [v["key"] for v in VITAL_TYPES]
+
+# Razorpay client
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
+razorpay_client = None
+if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+    razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    logger.info("Razorpay client initialized")
+
+# Translations
+TRANSLATIONS = {
+    "en": {
+        "app_name": "VitalTrack", "dashboard": "Dashboard", "daily_tracker": "Daily Tracker",
+        "charts_trends": "Charts & Trends", "reports": "Reports", "billing": "Billing",
+        "settings": "Settings", "admin_panel": "Admin Panel", "sign_out": "Sign Out",
+        "welcome_back": "Welcome back", "active_vitals": "Active Vitals", "todays_entries": "Today's Entries",
+        "this_week": "This Week", "plan": "Plan", "health_insights": "Health Insights",
+        "quick_actions": "Quick Actions", "your_vitals": "Your Vitals", "log_todays_vitals": "Log Today's Vitals",
+        "view_trends": "View Trends", "export_report": "Export Report", "enable_vitals": "Enable Vitals",
+        "get_started": "Get Started", "save_all": "Save All", "no_vitals_enabled": "No Vitals Enabled",
+        "select_vital": "Select vital", "date_range": "Date Range", "export": "Export",
+        "current_plan": "Current Plan", "upgrade": "Upgrade", "downgrade": "Downgrade",
+        "switch": "Switch", "profile": "Profile", "manage_vitals": "Manage Vitals",
+        "save_profile": "Save Profile", "full_name": "Full Name", "email": "Email",
+        "password": "Password", "sign_in": "Sign In", "create_account": "Create Account",
+        "dont_have_account": "Don't have an account?", "already_have_account": "Already have an account?",
+        "dark_mode": "Dark Mode", "language": "Language", "subscription_billing": "Subscription & Billing",
+        "reports_export": "Reports & Export", "shared_reports": "Shared Reports",
+        "create_shared_report": "Create Shared Report", "share_link": "Share Link",
+        "password_protected": "Password Protected", "expires_in": "Expires in",
+        "revoke": "Revoke", "copy_link": "Copy Link", "normal": "Normal", "warning": "Warning",
+        "critical": "Critical", "medical_disclaimer": "For informational tracking only. Not a medical device.",
+    },
+    "hi": {
+        "app_name": "VitalTrack", "dashboard": "डैशबोर्ड", "daily_tracker": "दैनिक ट्रैकर",
+        "charts_trends": "चार्ट और रुझान", "reports": "रिपोर्ट", "billing": "बिलिंग",
+        "settings": "सेटिंग्स", "admin_panel": "एडमिन पैनल", "sign_out": "साइन आउट",
+        "welcome_back": "वापस स्वागत है", "active_vitals": "सक्रिय वाइटल्स", "todays_entries": "आज की एंट्री",
+        "this_week": "इस सप्ताह", "plan": "प्लान", "health_insights": "स्वास्थ्य अंतर्दृष्टि",
+        "quick_actions": "त्वरित कार्य", "your_vitals": "आपके वाइटल्स", "log_todays_vitals": "आज के वाइटल्स दर्ज करें",
+        "view_trends": "रुझान देखें", "export_report": "रिपोर्ट निर्यात करें", "enable_vitals": "वाइटल्स सक्षम करें",
+        "get_started": "शुरू करें", "save_all": "सब सेव करें", "no_vitals_enabled": "कोई वाइटल्स सक्षम नहीं",
+        "select_vital": "वाइटल चुनें", "date_range": "तारीख सीमा", "export": "निर्यात",
+        "current_plan": "वर्तमान प्लान", "upgrade": "अपग्रेड", "downgrade": "डाउनग्रेड",
+        "switch": "बदलें", "profile": "प्रोफ़ाइल", "manage_vitals": "वाइटल्स प्रबंधित करें",
+        "save_profile": "प्रोफ़ाइल सेव करें", "full_name": "पूरा नाम", "email": "ईमेल",
+        "password": "पासवर्ड", "sign_in": "साइन इन", "create_account": "खाता बनाएं",
+        "dont_have_account": "खाता नहीं है?", "already_have_account": "पहले से खाता है?",
+        "dark_mode": "डार्क मोड", "language": "भाषा", "subscription_billing": "सदस्यता और बिलिंग",
+        "reports_export": "रिपोर्ट और निर्यात", "shared_reports": "साझा रिपोर्ट",
+        "create_shared_report": "साझा रिपोर्ट बनाएं", "share_link": "लिंक साझा करें",
+        "password_protected": "पासवर्ड संरक्षित", "expires_in": "समाप्ति",
+        "revoke": "रद्द करें", "copy_link": "लिंक कॉपी करें", "normal": "सामान्य", "warning": "चेतावनी",
+        "critical": "गंभीर", "medical_disclaimer": "केवल सूचना ट्रैकिंग के लिए। चिकित्सा उपकरण नहीं है।",
+    },
+    "te": {
+        "app_name": "VitalTrack", "dashboard": "డాష్‌బోర్డ్", "daily_tracker": "దైనిక ట్రాకర్",
+        "charts_trends": "చార్ట్‌లు & ట్రెండ్‌లు", "reports": "రిపోర్ట్‌లు", "billing": "బిల్లింగ్",
+        "settings": "సెట్టింగ్‌లు", "admin_panel": "అడ్మిన్ ప్యానెల్", "sign_out": "సైన్ అవుట్",
+        "welcome_back": "తిరిగి స్వాగతం", "active_vitals": "యాక్టివ్ వైటల్స్", "todays_entries": "ఈరోజు ఎంట్రీలు",
+        "this_week": "ఈ వారం", "plan": "ప్లాన్", "health_insights": "ఆరోగ్య అంతర్దృష్టులు",
+        "quick_actions": "త్వరిత చర్యలు", "your_vitals": "మీ వైటల్స్", "log_todays_vitals": "ఈరోజు వైటల్స్ నమోదు చేయండి",
+        "view_trends": "ట్రెండ్‌లు చూడండి", "export_report": "రిపోర్ట్ ఎగుమతి చేయండి", "enable_vitals": "వైటల్స్ ఎనేబుల్ చేయండి",
+        "get_started": "ప్రారంభించండి", "save_all": "అన్నీ సేవ్ చేయండి", "no_vitals_enabled": "వైటల్స్ ఎనేబుల్ కాలేదు",
+        "select_vital": "వైటల్ ఎంచుకోండి", "date_range": "తేదీ పరిధి", "export": "ఎగుమతి",
+        "current_plan": "ప్రస్తుత ప్లాన్", "upgrade": "అప్‌గ్రేడ్", "downgrade": "డౌన్‌గ్రేడ్",
+        "switch": "మార్చు", "profile": "ప్రొఫైల్", "manage_vitals": "వైటల్స్ నిర్వహించండి",
+        "save_profile": "ప్రొఫైల్ సేవ్ చేయండి", "full_name": "పూర్తి పేరు", "email": "ఇమెయిల్",
+        "password": "పాస్‌వర్డ్", "sign_in": "సైన్ ఇన్", "create_account": "ఖాతా సృష్టించండి",
+        "dont_have_account": "ఖాతా లేదా?", "already_have_account": "ఇప్పటికే ఖాతా ఉందా?",
+        "dark_mode": "డార్క్ మోడ్", "language": "భాష", "subscription_billing": "సబ్‌స్క్రిప్షన్ & బిల్లింగ్",
+        "reports_export": "రిపోర్ట్‌లు & ఎగుమతి", "shared_reports": "షేర్డ్ రిపోర్ట్‌లు",
+        "create_shared_report": "షేర్డ్ రిపోర్ట్ సృష్టించండి", "share_link": "లింక్ షేర్ చేయండి",
+        "password_protected": "పాస్‌వర్డ్ రక్షిత", "expires_in": "గడువు",
+        "revoke": "రద్దు", "copy_link": "లింక్ కాపీ చేయండి", "normal": "సాధారణ", "warning": "హెచ్చరిక",
+        "critical": "తీవ్ర", "medical_disclaimer": "సమాచార ట్రాకింగ్ కోసం మాత్రమే. వైద్య పరికరం కాదు.",
+    },
+}
 
 # ==================== PYDANTIC MODELS ====================
 class RegisterRequest(BaseModel):
@@ -96,6 +177,20 @@ class SharedReportRequest(BaseModel):
     start_date: str
     end_date: str
     expires_days: int = 7
+    password: Optional[str] = None
+
+class SharedReportAccessRequest(BaseModel):
+    password: Optional[str] = None
+
+class RazorpayOrderRequest(BaseModel):
+    plan_key: str
+    billing_cycle: str = "monthly"
+
+class RazorpayVerifyRequest(BaseModel):
+    razorpay_order_id: str
+    razorpay_payment_id: str
+    razorpay_signature: str
+    plan_key: str
 
 class VitalToggleRequest(BaseModel):
     vital_key: str
@@ -652,9 +747,11 @@ async def create_shared_report(req: SharedReportRequest, request: Request):
     doc = {"user_id": str(user["_id"]), "token": token, "vital_keys": req.vital_keys,
            "start_date": req.start_date, "end_date": req.end_date,
            "expires_at": (datetime.now(timezone.utc) + timedelta(days=req.expires_days)).isoformat(),
+           "password_hash": hash_password(req.password) if req.password else None,
+           "has_password": bool(req.password),
            "active": True, "created_at": datetime.now(timezone.utc).isoformat()}
     await db.shared_reports.insert_one(doc)
-    return {"token": token, "message": "Shared report created"}
+    return {"token": token, "message": "Shared report created", "has_password": bool(req.password)}
 
 @api_router.get("/shared-reports")
 async def list_shared_reports(request: Request):
@@ -673,6 +770,35 @@ async def view_shared_report(token: str):
             exp = datetime.fromisoformat(exp)
         if datetime.now(timezone.utc) > exp:
             raise HTTPException(status_code=410, detail="Report link has expired")
+    # If password protected, return metadata only
+    if report.get("has_password"):
+        return {"requires_password": True, "vital_keys": report["vital_keys"],
+                "start_date": report["start_date"], "end_date": report["end_date"]}
+    entries = await db.daily_entries.find(
+        {"user_id": report["user_id"], "vital_key": {"$in": report["vital_keys"]},
+         "date": {"$gte": report["start_date"], "$lte": report["end_date"]}},
+        {"_id": 0}
+    ).sort("date", 1).to_list(5000)
+    user = await db.users.find_one({"_id": ObjectId(report["user_id"])})
+    return {"entries": entries, "vital_keys": report["vital_keys"],
+            "start_date": report["start_date"], "end_date": report["end_date"],
+            "user_name": user.get("name", "User") if user else "User",
+            "vital_types": [v for v in VITAL_TYPES if v["key"] in report["vital_keys"]]}
+
+@api_router.post("/shared-reports/view/{token}")
+async def view_shared_report_with_password(token: str, req: SharedReportAccessRequest):
+    report = await db.shared_reports.find_one({"token": token, "active": True})
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found or expired")
+    if report.get("expires_at"):
+        exp = report["expires_at"]
+        if isinstance(exp, str):
+            exp = datetime.fromisoformat(exp)
+        if datetime.now(timezone.utc) > exp:
+            raise HTTPException(status_code=410, detail="Report link has expired")
+    if report.get("has_password") and report.get("password_hash"):
+        if not req.password or not verify_password(req.password, report["password_hash"]):
+            raise HTTPException(status_code=401, detail="Incorrect password")
     entries = await db.daily_entries.find(
         {"user_id": report["user_id"], "vital_key": {"$in": report["vital_keys"]},
          "date": {"$gte": report["start_date"], "$lte": report["end_date"]}},
@@ -713,7 +839,7 @@ async def admin_dashboard(request: Request):
     async for doc in db.daily_entries.aggregate(pipeline):
         vital_usage[doc["_id"]] = doc["count"]
     # MRR calculation
-    mrr = (standard_users * 299) + (premium_users * 599)
+    mrr = (standard_users * 299) + (premium_users * 499)
     return {
         "total_users": total_users, "free_users": free_users, "standard_users": standard_users,
         "premium_users": premium_users, "total_entries": total_entries, "total_exports": total_exports,
@@ -801,6 +927,112 @@ async def admin_analytics(request: Request):
         if isinstance(log.get("created_at"), datetime):
             log["created_at"] = log["created_at"].isoformat()
     return {"daily_entries": daily_entries, "registrations": registrations, "audit_logs": logs}
+
+# ==================== RAZORPAY ROUTES ====================
+@api_router.post("/razorpay/create-order")
+async def razorpay_create_order(req: RazorpayOrderRequest, request: Request):
+    user = await get_current_user(request)
+    if not razorpay_client:
+        raise HTTPException(status_code=503, detail="Razorpay not configured")
+    plan = next((p for p in PLANS if p["key"] == req.plan_key), None)
+    if not plan or plan["price"] == 0:
+        raise HTTPException(status_code=400, detail="Invalid plan for payment")
+    price = plan["price_yearly"] if req.billing_cycle == "yearly" else plan["price"]
+    amount_paise = int(price * 100)
+    try:
+        order = razorpay_client.order.create({
+            "amount": amount_paise, "currency": "INR", "payment_capture": 1,
+            "notes": {"user_id": str(user["_id"]), "plan_key": req.plan_key, "billing_cycle": req.billing_cycle}
+        })
+        await db.payment_transactions.insert_one({
+            "user_id": str(user["_id"]), "order_id": order["id"], "plan_key": req.plan_key,
+            "amount": price, "currency": "INR", "billing_cycle": req.billing_cycle,
+            "status": "created", "gateway": "razorpay",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        return {"order_id": order["id"], "amount": amount_paise, "currency": "INR",
+                "key_id": RAZORPAY_KEY_ID, "plan": plan}
+    except Exception as e:
+        logger.error(f"Razorpay order creation failed: {e}")
+        raise HTTPException(status_code=500, detail="Payment order creation failed")
+
+@api_router.post("/razorpay/verify-payment")
+async def razorpay_verify_payment(req: RazorpayVerifyRequest, request: Request):
+    user = await get_current_user(request)
+    uid = str(user["_id"])
+    if not razorpay_client:
+        raise HTTPException(status_code=503, detail="Razorpay not configured")
+    try:
+        razorpay_client.utility.verify_payment_signature({
+            "razorpay_order_id": req.razorpay_order_id,
+            "razorpay_payment_id": req.razorpay_payment_id,
+            "razorpay_signature": req.razorpay_signature
+        })
+    except Exception:
+        raise HTTPException(status_code=400, detail="Payment verification failed")
+    # Activate plan
+    new_plan = next((p for p in PLANS if p["key"] == req.plan_key), None)
+    if not new_plan:
+        raise HTTPException(status_code=400, detail="Invalid plan")
+    enabled = user.get("enabled_vitals", [])
+    if new_plan["vital_limit"] < len(enabled):
+        enabled = enabled[:new_plan["vital_limit"]]
+    await db.users.update_one({"_id": user["_id"]}, {"$set": {"plan": req.plan_key, "enabled_vitals": enabled, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    await db.subscriptions.update_one(
+        {"user_id": uid, "status": "active"},
+        {"$set": {"plan_key": req.plan_key, "status": "active", "gateway": "razorpay",
+                  "payment_id": req.razorpay_payment_id, "order_id": req.razorpay_order_id,
+                  "started_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    await db.payment_transactions.update_one(
+        {"order_id": req.razorpay_order_id},
+        {"$set": {"payment_id": req.razorpay_payment_id, "status": "captured"}}
+    )
+    await db.audit_logs.insert_one({"user_id": uid, "action": "payment_success", "details": f"Razorpay: {req.plan_key}", "created_at": datetime.now(timezone.utc)})
+    return {"message": f"Payment successful! Plan upgraded to {new_plan['name']}", "plan": new_plan, "enabled_vitals": enabled}
+
+@api_router.post("/razorpay/webhook")
+async def razorpay_webhook(request: Request):
+    payload = await request.body()
+    signature = request.headers.get("X-Razorpay-Signature", "")
+    webhook_secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET", RAZORPAY_KEY_SECRET)
+    try:
+        expected = hmac.new(webhook_secret.encode('utf-8'), payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, signature):
+            logger.warning("Razorpay webhook signature mismatch")
+    except Exception:
+        pass
+    try:
+        data = json.loads(payload)
+        event = data.get("event", "")
+        logger.info(f"Razorpay webhook event: {event}")
+        if event == "payment.captured":
+            payment = data.get("payload", {}).get("payment", {}).get("entity", {})
+            order_id = payment.get("order_id")
+            if order_id:
+                await db.payment_transactions.update_one(
+                    {"order_id": order_id},
+                    {"$set": {"status": "captured", "payment_id": payment.get("id")}}
+                )
+    except Exception as e:
+        logger.error(f"Webhook processing error: {e}")
+    return {"status": "ok"}
+
+# ==================== TRANSLATIONS ROUTES ====================
+@api_router.get("/translations/{lang}")
+async def get_translations(lang: str):
+    if lang not in TRANSLATIONS:
+        lang = "en"
+    return TRANSLATIONS[lang]
+
+@api_router.get("/translations")
+async def list_languages():
+    return {"languages": [
+        {"code": "en", "name": "English", "native": "English"},
+        {"code": "hi", "name": "Hindi", "native": "हिन्दी"},
+        {"code": "te", "name": "Telugu", "native": "తెలుగు"},
+    ]}
 
 # ==================== APP CONFIG ====================
 app.add_middleware(
