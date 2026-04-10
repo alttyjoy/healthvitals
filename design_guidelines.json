@@ -1,0 +1,98 @@
+{
+  "theme": "Light",
+  "archetype": "1 (Organic & Earthy)",
+  "color_palette": {
+    "background": "bg-[#FAFAF9]",
+    "surface": "bg-white",
+    "surface_glass": "bg-white/80 backdrop-blur-2xl backdrop-saturate-150 border-white/40",
+    "primary": "bg-[#2D4A3E] hover:bg-[#1E332A] text-white",
+    "secondary": "bg-[#EAE7E1] hover:bg-[#DEDCD5] text-[#2C2C2A]",
+    "accent_terracotta": "bg-[#D96C4E] text-white",
+    "accent_moss": "bg-[#5C6D63] text-white",
+    "text_primary": "text-[#2C2C2A]",
+    "text_secondary": "text-[#6E6E6A]",
+    "border": "border-[#EAE7E1]",
+    "chart_colors": ["#2D4A3E", "#D96C4E", "#8CB369", "#E9C46A", "#F4A261", "#A3B18A", "#588157", "#3A5A40"]
+  },
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "Inter",
+    "h1": "text-5xl sm:text-6xl tracking-tight font-light text-[#2C2C2A]",
+    "h2": "text-3xl sm:text-4xl tracking-tight font-medium text-[#2C2C2A]",
+    "h3": "text-2xl tracking-tight text-[#2C2C2A]",
+    "h4": "text-xl text-[#2C2C2A]",
+    "body": "text-base leading-relaxed text-[#6E6E6A]",
+    "overline": "text-xs tracking-[0.2em] uppercase text-[#2D4A3E] font-semibold"
+  },
+  "spacing_and_layout": {
+    "marketing_grid": "grid-cols-1 md:grid-cols-12 gap-12 py-32",
+    "dashboard_grid": "grid-cols-1 md:grid-cols-4 gap-6",
+    "container_padding": "px-6 md:px-12 lg:px-24",
+    "card_padding": "p-8",
+    "radius": "rounded-2xl"
+  },
+  "components": {
+    "buttons": "rounded-full px-8 py-3.5 font-medium transition-all duration-300 hover:-translate-y-0.5 shadow-sm hover:shadow-md",
+    "cards": "bg-white border border-[#EAE7E1] shadow-[0_4px_24px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden",
+    "data_table": "w-full text-left text-sm text-[#6E6E6A] border-collapse",
+    "data_table_header": "bg-[#FAFAF9] text-[#2C2C2A] font-medium py-4 px-6 sticky top-0 backdrop-blur-sm z-10 border-b border-[#EAE7E1]",
+    "data_table_cell": "py-4 px-6 border-b border-[#EAE7E1]",
+    "navigation": "fixed top-0 w-full z-50 bg-white/80 backdrop-blur-2xl border-b border-[#EAE7E1] transition-all duration-300",
+    "input": "w-full rounded-xl border border-[#EAE7E1] bg-[#FAFAF9] px-4 py-3.5 text-[#2C2C2A] focus:bg-white focus:ring-2 focus:ring-[#2D4A3E]/20 focus:border-[#2D4A3E] transition-all duration-200 outline-none",
+    "chart_tooltip": "bg-white/90 backdrop-blur-xl border border-[#EAE7E1] shadow-xl rounded-xl p-4"
+  },
+  "motion_and_interactions": {
+    "hover_state": "transition-transform duration-300 hover:scale-[1.02]",
+    "page_transition": "animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out",
+    "stagger_children": "delay-[50ms]"
+  },
+  "images": {
+    "hero": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/5b2bf7cd-4a4c-4ab4-a4a8-7fc4ef4c140f/images/682a0b7f8e530af3f32d69f922f39c29da09a79d7e77fbe3af46054e7768646c.png",
+      "description": "Macro photography of an elegant medical concept: a glowing delicate sine wave representing health, resting on a textured natural stone surface. Soft daylight, shallow depth of field, earthy tones of beige and sage green. Use for the Hero Section visual or Background imagery in the About section."
+    },
+    "features": [
+      {
+        "url": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwyfHxtZWRpY2FsJTIwY2hhcnQlMjBkYXNoYm9hcmR8ZW58MHx8fHwxNzc1ODE5MjYyfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Graphs of performance analytics on a laptop screen. Use for Charts & Trends feature showcase."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1686061592689-312bbfb5c055?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwY2hhcnQlMjBkYXNoYm9hcmR8ZW58MHx8fHwxNzc1ODE5MjYyfDA&ixlib=rb-4.1.0&q=85",
+        "description": "A computer screen with a bar chart on it. Use for the Daily Tracker / Data visualization section."
+      }
+    ],
+    "testimonials": [
+      {
+        "url": "https://images.unsplash.com/photo-1595392599406-88100147f91c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHw0fHxoZWFsdGh5JTIwcGVyc29uJTIwd2VsbG5lc3MlMjBsaWZlc3R5bGUlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzU4MTkyNDl8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Woman in white tank top sitting on brown wooden seat. Use for user testimonial."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1764889743602-21cd1d4e4745?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwyfHxoZWFsdGh5JTIwcGVyc29uJTIwd2VsbG5lc3MlMjBsaWZlc3R5bGUlMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzU4MTkyNDl8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Woman performing a yoga handstand. Use for wellness/activity tracking feature representation."
+      }
+    ],
+    "logos": [
+      {
+        "url": "https://images.unsplash.com/photo-1611162618828-bc409f073cbf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwyfHxzdGFydHVwJTIwY29tcGFueSUyMGxvZ28lMjBtaW5pbWFsaXN0aWN8ZW58MHx8fHwxNzc1ODE5MjQ5fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Partner / Integration logo 1."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1537726086503-4806b83dab73?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwzfHxzdGFydHVwJTIwY29tcGFueSUyMGxvZ28lMjBtaW5pbWFsaXN0aWN8ZW58MHx8fHwxNzc1ODE5MjQ5fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Partner / Integration logo 2."
+      }
+    ]
+  },
+  "specific_design_instructions": [
+    "Run: `yarn add @phosphor-icons/react` and use Phosphor Icons (Duotone weight) for a high-end, friendly SaaS feel. Do not use Lucide.",
+    "Dashboard must avoid 'glassmorphism' for data clarity. Stick to Flat Solid surfaces with max 8px border-radius (`rounded-lg`).",
+    "Marketing page should utilize heavy padding (e.g., py-32) and asymmetric bento grids (grid-cols-12) to create breathing room.",
+    "Hero section must not use a fully dark overlay. Use a subtle gradient overlay or position text in negative space to let the generated health sine wave image shine.",
+    "The Daily Tracker (Spreadsheet-style) must feature sticky headers and inline editing UI with a clean, un-bordered look inside cells, only separated by horizontal lines (border-b). Use dense padding in tables.",
+    "Add 'data-testid' to all buttons, inputs, links, and forms.",
+    "Do NOT use 'Inter' for Headings. Use 'Outfit' for all headings. Use 'Inter' or 'Work Sans' for Body and tabular data.",
+    "Avoid typical bright medical blue or sterile white. Stick to the Earthy Palette (stone, deep green, terracotta) to provide warmth and reduce patient anxiety.",
+    "Charts (Recharts) must use the specific chart_colors array provided. No generic defaults.",
+    "Forms & Inputs: Use Shadcn components for complex interactions but heavily customize them with the soft stone backgrounds and deep green focus rings.",
+    "Navigation: Header must have a solid or frosted background. Never use a transparent header directly over hero images without proper scrim/backdrop-blur."
+  ]
+}
