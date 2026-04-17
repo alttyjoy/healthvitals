@@ -16,27 +16,20 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 - Full MVP: Auth, Dashboard, Tracker, Charts, Export, Plans, Admin
 
 ### Phase 2 (April 10, 2026)
-- Premium price updated to ₹499/month
-- Razorpay payment gateway integrated
-- Dark mode toggle
-- Multilingual support (English, Hindi, Telugu)
-- Shared reports with password-protected secure URLs
-- Plan upgrade/downgrade with Razorpay checkout
+- Premium ₹499/month, Razorpay, Dark mode, Multilingual, Shared reports
 
 ### Phase 3 (April 10, 2026)
-- Content Pages: Terms, Privacy, Refund, About
-- PayU.In Payment Gateway frontend with gateway selector
-- Referral System UI in Settings
-- Admin SMTP Configuration form
+- Content Pages, PayU.In, Referral System UI, Admin SMTP Config
 
 ### Phase 4 (April 17, 2026)
-- **New Admin User**: mohanv44@gmail.com / India@1947 as super_admin
-- **Sidebar Rename**: "Dashboard" → "Home"
-- **8 FAQs**: Expanded from 4 to 8 health-relevant questions
-- **Forgot Password**: Full flow — Login page link → /forgot-password → email submit → token-based reset at /reset-password
-- **Responsive Design**: Landing page mobile hamburger menu, responsive hero/features/pricing/CTA/footer
-- **Email Reminder System**: APScheduler cron job, reads SMTP config from DB, sends HTML reminders to users who missed daily tracking. Admin can enable/disable, set time, trigger manually.
-- **Admin Content Management**: Full CRUD for content pages (blog, legal, custom). Built-in pages protected from deletion but can be overridden. Dialog-based editor with markdown support.
+- New Admin (mohanv44@gmail.com), Sidebar "Home", 8 FAQs, Forgot Password, Responsive Landing, Email Reminders, Admin Content Management
+
+### Phase 5 (April 17, 2026)
+- **Admin User CRUD**: Full Add/Edit/Delete users from Admin Panel → Users tab
+  - Add User: Name, Email, Password, Role (User/Admin), Plan selector
+  - Edit User: Update name, role, plan (email read-only)
+  - Delete User: Confirm dialog, cascade deletes entries/exports/reports, self-delete protection
+  - Backend: POST/PUT/DELETE `/api/admin/users` with validation
 
 ## Pricing (INR)
 - Free: ₹0 (2 vitals, 7-day history, CSV only)
@@ -58,5 +51,6 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 - [ ] Device sync readiness
 
 ## Notes
-- Email reminders are FUNCTIONAL but require SMTP configuration in Admin Panel → Settings tab to actually send emails. Without SMTP config, the system logs warnings.
-- Forgot Password token is logged on server (not emailed) until SMTP is configured.
+- Email reminders require SMTP configuration in Admin Panel → Settings tab
+- Forgot Password token logged on server until SMTP is configured
+- Admin roles: super_admin (full access), user (standard access)
