@@ -907,6 +907,53 @@ async def admin_update_user(user_id: str, request: Request):
     user = await db.users.find_one({"_id": ObjectId(user_id)})
     return serialize_user(user)
 
+@api_router.post("/admin/users")
+async def admin_create_user(request: Request):
+    admin = await get_admin_user(request)
+    body = await request.json()
+    email = body.get("email", "").strip().lower()
+    password = body.get("password", "")
+    name = body.get("name", "").strip()
+    role = body.get("role", "user")
+    plan = body.get("plan", "free")
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if role not in ["user", "super_admin"]:
+        raise HTTPException(status_code=400, detail="Role must be 'user' or 'super_admin'")
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+    plan_doc = await db.plans.find_one({"key": plan})
+    vital_limit = plan_doc["vital_limit"] if plan_doc else 2
+    enabled_vitals = VITAL_KEYS[:vital_limit]
+    user_doc = {
+        "email": email, "password_hash": hash_password(password),
+        "name": name or email.split("@")[0], "role": role, "plan": plan,
+        "enabled_vitals": enabled_vitals, "settings": {"language": "en"},
+        "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
+    }
+    result = await db.users.insert_one(user_doc)
+    await db.audit_logs.insert_one({"user_id": str(admin["_id"]), "action": "admin_create_user", "details": f"Created user {email} as {role}", "created_at": datetime.now(timezone.utc)})
+    user_doc["_id"] = result.inserted_id
+    return serialize_user(user_doc)
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, request: Request):
+    admin = await get_admin_user(request)
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if str(user["_id"]) == str(admin["_id"]):
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    await db.users.delete_one({"_id": ObjectId(user_id)})
+    await db.daily_entries.delete_many({"user_id": user_id})
+    await db.exports.delete_many({"user_id": user_id})
+    await db.shared_reports.delete_many({"user_id": user_id})
+    await db.audit_logs.insert_one({"user_id": str(admin["_id"]), "action": "admin_delete_user", "details": f"Deleted user {user.get('email', user_id)}", "created_at": datetime.now(timezone.utc)})
+    return {"message": "User deleted"}
+
 @api_router.get("/admin/plans")
 async def admin_list_plans(request: Request):
     await get_admin_user(request)
