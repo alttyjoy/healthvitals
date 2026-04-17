@@ -5,7 +5,7 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 
 ## Architecture
 - **Frontend**: React + Tailwind CSS + Recharts + Shadcn/UI + Phosphor Icons
-- **Backend**: FastAPI (Python) + MongoDB
+- **Backend**: FastAPI (Python) + MongoDB + APScheduler
 - **Auth**: JWT with httpOnly cookies, role-based access
 - **Payments**: Razorpay, PayU.In (live integration with test keys)
 - **Design**: Earthy palette, Outfit + Inter fonts, dark mode support
@@ -17,19 +17,26 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 
 ### Phase 2 (April 10, 2026)
 - Premium price updated to ₹499/month
-- Razorpay payment gateway integrated (order creation, verification, webhook)
+- Razorpay payment gateway integrated
 - Dark mode toggle
 - Multilingual support (English, Hindi, Telugu)
 - Shared reports with password-protected secure URLs
-- Plan upgrade/downgrade with Razorpay checkout for paid plans
-- Direct plan switch for free plan downgrade
+- Plan upgrade/downgrade with Razorpay checkout
 
 ### Phase 3 (April 10, 2026)
-- **Content Pages**: Terms of Service, Privacy Policy, Refund Policy, About - rendered via `/page/:pageKey` route
-- **PayU.In Payment Gateway**: Frontend gateway selector (Razorpay/PayU toggle), PayU form POST redirect flow, callback handling with URL params
-- **Referral System UI**: Referral code display with copy, referral stats, apply referral code input in Settings page
-- **Admin SMTP Configuration**: New Settings tab in Admin Panel with full SMTP form (Host, Port, Username, Password, From Email, From Name, TLS toggle)
-- **Footer Legal Links**: Landing page footer now has Terms, Privacy, Refunds, About navigation links
+- Content Pages: Terms, Privacy, Refund, About
+- PayU.In Payment Gateway frontend with gateway selector
+- Referral System UI in Settings
+- Admin SMTP Configuration form
+
+### Phase 4 (April 17, 2026)
+- **New Admin User**: mohanv44@gmail.com / India@1947 as super_admin
+- **Sidebar Rename**: "Dashboard" → "Home"
+- **8 FAQs**: Expanded from 4 to 8 health-relevant questions
+- **Forgot Password**: Full flow — Login page link → /forgot-password → email submit → token-based reset at /reset-password
+- **Responsive Design**: Landing page mobile hamburger menu, responsive hero/features/pricing/CTA/footer
+- **Email Reminder System**: APScheduler cron job, reads SMTP config from DB, sends HTML reminders to users who missed daily tracking. Admin can enable/disable, set time, trigger manually.
+- **Admin Content Management**: Full CRUD for content pages (blog, legal, custom). Built-in pages protected from deletion but can be overridden. Dialog-based editor with markdown support.
 
 ## Pricing (INR)
 - Free: ₹0 (2 vitals, 7-day history, CSV only)
@@ -39,13 +46,17 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 ## Prioritized Backlog
 ### P1
 - [ ] Stripe payment gateway integration (3rd gateway option)
-- [ ] Email Reminder system (APScheduler + saved SMTP config for missed tracking notifications)
-- [ ] Admin Content Management UI (CRUD for blog posts, FAQs, legal policies)
-- [ ] PDF/CSV export verification (watermarking, chart inclusion)
 
 ### P2
+- [ ] PDF/CSV export verification (watermarking, chart inclusion)
 - [ ] Push notification architecture (Firebase FCM)
 - [ ] Advanced analytics (period comparison, trend arrows)
+
+### P3
 - [ ] Mobile app API hardening
 - [ ] AI-powered health insights
 - [ ] Device sync readiness
+
+## Notes
+- Email reminders are FUNCTIONAL but require SMTP configuration in Admin Panel → Settings tab to actually send emails. Without SMTP config, the system logs warnings.
+- Forgot Password token is logged on server (not emailed) until SMTP is configured.
