@@ -306,15 +306,41 @@ async def startup():
         logger.info(f"Admin user created: {admin_email}")
     elif not verify_password(admin_password, existing["password_hash"]):
         await db.users.update_one({"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}})
+    # Seed second admin
+    admin2_email = "mohanv44@gmail.com"
+    admin2_password = "India@1947"
+    existing2 = await db.users.find_one({"email": admin2_email})
+    if not existing2:
+        await db.users.insert_one({
+            "email": admin2_email, "password_hash": hash_password(admin2_password),
+            "name": "Mohan V", "role": "super_admin", "plan": "premium",
+            "enabled_vitals": VITAL_KEYS, "settings": {"language": "en"},
+            "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
+        })
+        logger.info(f"Admin user created: {admin2_email}")
+    elif not verify_password(admin2_password, existing2["password_hash"]):
+        await db.users.update_one({"email": admin2_email}, {"$set": {"password_hash": hash_password(admin2_password)}})
     # Write test credentials
     creds_dir = Path("/app/memory")
     creds_dir.mkdir(exist_ok=True)
     with open(creds_dir / "test_credentials.md", "w") as f:
-        f.write(f"# Test Credentials\n\n## Admin\n- Email: {admin_email}\n- Password: {admin_password}\n- Role: super_admin\n\n## Test User\n- Register at /register with any email\n\n## Endpoints\n- Login: POST /api/auth/login\n- Register: POST /api/auth/register\n- Me: GET /api/auth/me\n")
+        f.write(f"# Test Credentials\n\n## Admin 1\n- Email: {admin_email}\n- Password: {admin_password}\n- Role: super_admin\n\n## Admin 2\n- Email: mohanv44@gmail.com\n- Password: India@1947\n- Role: super_admin\n\n## Test User\n- Register at /register with any email\n\n## Endpoints\n- Login: POST /api/auth/login\n- Register: POST /api/auth/register\n- Me: GET /api/auth/me\n")
     logger.info("VitalTrack API started successfully")
+    # Start scheduler
+    if not scheduler.running:
+        scheduler.start()
+    # Check if reminders are enabled
+    reminder_settings = await db.settings.find_one({"key": "reminders"})
+    if reminder_settings and reminder_settings.get("enabled"):
+        time_str = reminder_settings.get("time", "09:00")
+        hour, minute = map(int, time_str.split(":"))
+        scheduler.add_job(check_and_send_reminders, "cron", hour=hour, minute=minute, id="daily_reminder", replace_existing=True)
+        logger.info(f"Reminder job scheduled at {time_str}")
 
 @app.on_event("shutdown")
 async def shutdown():
+    if scheduler.running:
+        scheduler.shutdown()
     client.close()
 
 # ==================== AUTH ROUTES ====================
@@ -1454,6 +1480,161 @@ async def list_content_pages():
         if c["key"] not in pages:
             pages.append(c["key"])
     return {"pages": pages}
+
+# ==================== EMAIL REMINDER SYSTEM ====================
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+import aiosmtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+scheduler = AsyncIOScheduler()
+
+async def send_email(to_email: str, subject: str, html_body: str):
+    """Send email using saved SMTP settings from DB."""
+    smtp_settings = await db.settings.find_one({"key": "smtp"})
+    if not smtp_settings or not smtp_settings.get("smtp_host") or not smtp_settings.get("smtp_username"):
+        logger.warning("SMTP not configured, skipping email send")
+        return False
+    msg = MIMEMultipart("alternative")
+    msg["From"] = f"{smtp_settings.get('smtp_from_name', 'VitalTrack')} <{smtp_settings.get('smtp_from_email', smtp_settings['smtp_username'])}>"
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(html_body, "html"))
+    try:
+        await aiosmtplib.send(
+            msg,
+            hostname=smtp_settings["smtp_host"],
+            port=smtp_settings.get("smtp_port", 587),
+            username=smtp_settings["smtp_username"],
+            password=smtp_settings.get("smtp_password", ""),
+            use_tls=smtp_settings.get("smtp_use_tls", True),
+        )
+        logger.info(f"Email sent to {to_email}: {subject}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email to {to_email}: {e}")
+        return False
+
+async def check_and_send_reminders():
+    """Daily job: find users who have reminders enabled but didn't log today."""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    try:
+        users_cursor = db.users.find({"role": {"$ne": "super_admin"}})
+        async for user in users_cursor:
+            uid = str(user["_id"])
+            enabled = user.get("enabled_vitals", [])
+            if not enabled:
+                continue
+            # Check if user has active reminders
+            reminder = await db.reminders.find_one({"user_id": uid, "enabled": True})
+            if not reminder:
+                continue
+            # Check if user logged any vitals today
+            entry = await db.daily_entries.find_one({"user_id": uid, "date": today})
+            if entry:
+                continue
+            # Send reminder email
+            email = user.get("email", "")
+            name = user.get("name", "there")
+            html = f"""
+            <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;">
+                <h2 style="color:#2D4A3E;">Hi {name},</h2>
+                <p style="color:#6E6E6A;">You haven't logged your health vitals today. Consistent tracking helps you and your healthcare provider identify trends early.</p>
+                <p style="color:#6E6E6A;">Take a moment to log your vitals now:</p>
+                <a href="{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/tracker" style="display:inline-block;background:#2D4A3E;color:white;padding:12px 24px;border-radius:24px;text-decoration:none;margin-top:12px;">Log Vitals Now</a>
+                <p style="color:#999;font-size:12px;margin-top:24px;">You're receiving this because you have reminders enabled on VitalTrack.</p>
+            </div>"""
+            await send_email(email, "Reminder: Log your health vitals today", html)
+            await db.audit_logs.insert_one({
+                "user_id": uid, "action": "email_reminder_sent",
+                "details": f"Daily reminder sent to {email}",
+                "created_at": datetime.now(timezone.utc)
+            })
+    except Exception as e:
+        logger.error(f"Reminder job error: {e}")
+
+# Admin endpoint to manually trigger reminders
+@api_router.post("/admin/send-reminders")
+async def admin_send_reminders(request: Request):
+    await get_admin_user(request)
+    await check_and_send_reminders()
+    return {"message": "Reminder check completed"}
+
+# Admin endpoint to get/update reminder schedule
+@api_router.get("/admin/reminder-settings")
+async def get_reminder_settings(request: Request):
+    await get_admin_user(request)
+    settings = await db.settings.find_one({"key": "reminders"}, {"_id": 0})
+    return settings or {"key": "reminders", "enabled": False, "time": "09:00"}
+
+@api_router.put("/admin/reminder-settings")
+async def update_reminder_settings(request: Request):
+    await get_admin_user(request)
+    body = await request.json()
+    enabled = body.get("enabled", False)
+    time_str = body.get("time", "09:00")
+    await db.settings.update_one(
+        {"key": "reminders"},
+        {"$set": {"key": "reminders", "enabled": enabled, "time": time_str, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    # Reschedule
+    try:
+        scheduler.remove_job("daily_reminder")
+    except Exception:
+        pass
+    if enabled:
+        hour, minute = map(int, time_str.split(":"))
+        scheduler.add_job(check_and_send_reminders, "cron", hour=hour, minute=minute, id="daily_reminder", replace_existing=True)
+        logger.info(f"Reminder scheduled at {time_str}")
+    return {"message": f"Reminder {'enabled' if enabled else 'disabled'}"}
+
+# ==================== ADMIN CONTENT MANAGEMENT ====================
+class ContentPageRequest(BaseModel):
+    key: str
+    title: str
+    content: str
+    page_type: str = "legal"  # legal, blog, custom
+    published: bool = True
+
+@api_router.get("/admin/content-pages")
+async def admin_list_content_pages(request: Request):
+    await get_admin_user(request)
+    custom = await db.content_pages.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    # Include built-in pages
+    builtin = [{"key": k, "title": v["title"], "page_type": "legal", "published": True, "builtin": True} for k, v in CONTENT_PAGES.items()]
+    return {"pages": builtin + custom}
+
+@api_router.post("/admin/content-pages")
+async def admin_create_content_page(req: ContentPageRequest, request: Request):
+    await get_admin_user(request)
+    doc = {
+        "key": req.key, "title": req.title, "content": req.content,
+        "page_type": req.page_type, "published": req.published,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.content_pages.update_one({"key": req.key}, {"$set": doc}, upsert=True)
+    return {"message": "Page saved", "key": req.key}
+
+@api_router.put("/admin/content-pages/{page_key}")
+async def admin_update_content_page(page_key: str, req: ContentPageRequest, request: Request):
+    await get_admin_user(request)
+    await db.content_pages.update_one(
+        {"key": page_key},
+        {"$set": {"title": req.title, "content": req.content, "page_type": req.page_type,
+                  "published": req.published, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"message": "Page updated"}
+
+@api_router.delete("/admin/content-pages/{page_key}")
+async def admin_delete_content_page(page_key: str, request: Request):
+    await get_admin_user(request)
+    if page_key in CONTENT_PAGES:
+        raise HTTPException(status_code=400, detail="Cannot delete built-in pages")
+    await db.content_pages.delete_one({"key": page_key})
+    return {"message": "Page deleted"}
 
 # ==================== APP CONFIG ====================
 app.add_middleware(

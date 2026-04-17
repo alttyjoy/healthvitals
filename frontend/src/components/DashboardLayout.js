@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: House },
+  { to: '/dashboard', label: 'Home', icon: House },
   { to: '/tracker', label: 'Daily Tracker', icon: Table },
   { to: '/charts', label: 'Charts & Trends', icon: ChartLine },
   { to: '/reports', label: 'Reports', icon: FileArrowDown },

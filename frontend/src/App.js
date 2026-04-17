@@ -16,6 +16,8 @@ import Settings from "@/pages/Settings";
 import AdminPanel from "@/pages/AdminPanel";
 import SharedReportView from "@/pages/SharedReportView";
 import ContentPage from "@/pages/ContentPage";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import DashboardLayout from "@/components/DashboardLayout";
 
 function App() {
@@ -27,6 +29,8 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/shared/:token" element={<SharedReportView />} />
             <Route path="/page/:pageKey" element={<ContentPage />} />
             <Route element={<ProtectedRoute />}>

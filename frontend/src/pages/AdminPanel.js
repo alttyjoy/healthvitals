@@ -8,12 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
-  Users, ChartLine, CreditCard, FileArrowDown, MagnifyingGlass, ShieldCheck, Envelope
+  Users, ChartLine, CreditCard, FileArrowDown, MagnifyingGlass, ShieldCheck, Envelope, Article, Trash, PencilSimple, Plus, Bell, Clock
 } from '@phosphor-icons/react';
 
 export default function AdminPanel() {
@@ -28,6 +31,16 @@ export default function AdminPanel() {
   const [smtp, setSmtp] = useState({ smtp_host: '', smtp_port: 587, smtp_username: '', smtp_password: '', smtp_from_email: '', smtp_from_name: '', smtp_use_tls: true });
   const [smtpSaving, setSmtpSaving] = useState(false);
   const [smtpLoaded, setSmtpLoaded] = useState(false);
+  // Content Management
+  const [contentPages, setContentPages] = useState([]);
+  const [contentLoaded, setContentLoaded] = useState(false);
+  const [editingPage, setEditingPage] = useState(null);
+  const [pageForm, setPageForm] = useState({ key: '', title: '', content: '', page_type: 'legal', published: true });
+  const [pageSaving, setPageSaving] = useState(false);
+  // Reminder settings
+  const [reminderSettings, setReminderSettings] = useState({ enabled: false, time: '09:00' });
+  const [reminderLoaded, setReminderLoaded] = useState(false);
+  const [reminderSaving, setReminderSaving] = useState(false);
 
   useEffect(() => { loadDashboard(); }, []);
 
@@ -76,8 +89,68 @@ export default function AdminPanel() {
     finally { setSmtpSaving(false); }
   };
 
+  // Content management
+  const loadContentPages = async () => {
+    try {
+      const { data } = await api.get('/admin/content-pages');
+      setContentPages(data.pages || []);
+      setContentLoaded(true);
+    } catch (e) { console.error(e); }
+  };
+
+  const savePage = async () => {
+    if (!pageForm.key || !pageForm.title || !pageForm.content) { toast.error('All fields are required'); return; }
+    setPageSaving(true);
+    try {
+      if (editingPage && !editingPage.builtin) {
+        await api.put(`/admin/content-pages/${editingPage.key}`, pageForm);
+      } else {
+        await api.post('/admin/content-pages', pageForm);
+      }
+      toast.success('Page saved');
+      setEditingPage(null);
+      setPageForm({ key: '', title: '', content: '', page_type: 'legal', published: true });
+      loadContentPages();
+    } catch (err) { toast.error(formatApiError(err)); }
+    finally { setPageSaving(false); }
+  };
+
+  const deletePage = async (key) => {
+    try {
+      await api.delete(`/admin/content-pages/${key}`);
+      toast.success('Page deleted');
+      loadContentPages();
+    } catch (err) { toast.error(formatApiError(err)); }
+  };
+
+  // Reminder settings
+  const loadReminderSettings = async () => {
+    try {
+      const { data } = await api.get('/admin/reminder-settings');
+      setReminderSettings({ enabled: data.enabled || false, time: data.time || '09:00' });
+      setReminderLoaded(true);
+    } catch (e) { console.error(e); }
+  };
+
+  const saveReminderSettings = async () => {
+    setReminderSaving(true);
+    try {
+      await api.put('/admin/reminder-settings', reminderSettings);
+      toast.success(`Reminders ${reminderSettings.enabled ? 'enabled' : 'disabled'}`);
+    } catch (err) { toast.error(formatApiError(err)); }
+    finally { setReminderSaving(false); }
+  };
+
+  const triggerReminders = async () => {
+    try {
+      await api.post('/admin/send-reminders');
+      toast.success('Reminder check completed');
+    } catch (err) { toast.error(formatApiError(err)); }
+  };
+
   useEffect(() => { if (tab === 'analytics' && !analytics) loadAnalytics(); }, [tab]);
-  useEffect(() => { if (tab === 'settings' && !smtpLoaded) loadSmtp(); }, [tab, smtpLoaded]);
+  useEffect(() => { if (tab === 'settings' && !smtpLoaded) { loadSmtp(); loadReminderSettings(); } }, [tab, smtpLoaded]);
+  useEffect(() => { if (tab === 'content' && !contentLoaded) loadContentPages(); }, [tab, contentLoaded]);
 
   if (loading) return (
     <div className="space-y-4 animate-pulse">{[1,2,3,4].map(i => <div key={i} className="h-24 bg-[#EAE7E1] rounded-2xl" />)}</div>
@@ -94,11 +167,12 @@ export default function AdminPanel() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="bg-white border border-[#EAE7E1] rounded-xl p-1">
-          <TabsTrigger value="overview" data-testid="admin-tab-overview" className="rounded-lg data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Overview</TabsTrigger>
-          <TabsTrigger value="users" data-testid="admin-tab-users" className="rounded-lg data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Users</TabsTrigger>
-          <TabsTrigger value="analytics" data-testid="admin-tab-analytics" className="rounded-lg data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Analytics</TabsTrigger>
-          <TabsTrigger value="settings" data-testid="admin-tab-settings" className="rounded-lg data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Settings</TabsTrigger>
+        <TabsList className="bg-white border border-[#EAE7E1] rounded-xl p-1 flex-wrap">
+          <TabsTrigger value="overview" data-testid="admin-tab-overview" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Overview</TabsTrigger>
+          <TabsTrigger value="users" data-testid="admin-tab-users" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Users</TabsTrigger>
+          <TabsTrigger value="analytics" data-testid="admin-tab-analytics" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Analytics</TabsTrigger>
+          <TabsTrigger value="content" data-testid="admin-tab-content" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Content</TabsTrigger>
+          <TabsTrigger value="settings" data-testid="admin-tab-settings" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Settings</TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -224,8 +298,162 @@ export default function AdminPanel() {
           )}
         </TabsContent>
 
-        {/* Settings (SMTP) */}
+        {/* Content Management */}
+        <TabsContent value="content" className="space-y-6 mt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Article weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+              <h3 className="text-base font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Content Pages</h3>
+            </div>
+            <Button onClick={() => { setEditingPage({ isNew: true }); setPageForm({ key: '', title: '', content: '', page_type: 'legal', published: true }); }}
+              data-testid="admin-add-page-btn" className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-4 text-sm">
+              <Plus className="w-4 h-4 mr-1" /> Add Page
+            </Button>
+          </div>
+          <div className="bg-white border border-[#EAE7E1] rounded-2xl overflow-hidden">
+            <table className="w-full text-sm" data-testid="admin-content-table">
+              <thead>
+                <tr className="bg-[#FAFAF9] border-b border-[#EAE7E1]">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">Title</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide hidden sm:table-cell">Key</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide hidden sm:table-cell">Type</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">Status</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contentPages.map(page => (
+                  <tr key={page.key} className="border-b border-[#EAE7E1] hover:bg-[#FAFAF9]">
+                    <td className="px-5 py-3 font-medium text-[#2C2C2A]">{page.title}</td>
+                    <td className="px-5 py-3 text-[#6E6E6A] hidden sm:table-cell">/page/{page.key}</td>
+                    <td className="px-5 py-3 hidden sm:table-cell">
+                      <Badge className="bg-[#EAE7E1] text-[#6E6E6A] border-0 text-xs">{page.page_type || 'legal'}</Badge>
+                    </td>
+                    <td className="px-5 py-3">
+                      <Badge className={`border-0 text-xs ${page.published !== false ? 'bg-[#588157]/10 text-[#588157]' : 'bg-[#D96C4E]/10 text-[#D96C4E]'}`}>
+                        {page.published !== false ? 'Published' : 'Draft'}
+                      </Badge>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8"
+                          data-testid={`edit-page-${page.key}`}
+                          onClick={() => {
+                            setEditingPage(page);
+                            setPageForm({ key: page.key, title: page.title, content: page.content || '', page_type: page.page_type || 'legal', published: page.published !== false });
+                          }}>
+                          <PencilSimple className="w-4 h-4 text-[#6E6E6A]" />
+                        </Button>
+                        {!page.builtin && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`delete-page-${page.key}`}
+                            onClick={() => deletePage(page.key)}>
+                            <Trash className="w-4 h-4 text-[#D96C4E]" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {contentPages.length === 0 && (
+                  <tr><td colSpan={5} className="px-5 py-8 text-center text-[#6E6E6A]">No content pages yet</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Edit/Create Page Dialog */}
+          <Dialog open={!!editingPage} onOpenChange={(open) => { if (!open) setEditingPage(null); }}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle style={{ fontFamily: 'Outfit' }}>
+                  {editingPage?.isNew ? 'Create New Page' : `Edit: ${editingPage?.title || ''}`}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm">Page Key (URL slug)</Label>
+                    <Input value={pageForm.key} onChange={e => setPageForm(f => ({ ...f, key: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))}
+                      placeholder="my-page" disabled={editingPage && !editingPage.isNew} data-testid="page-key-input"
+                      className="mt-1 rounded-xl border-[#EAE7E1]" />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Title</Label>
+                    <Input value={pageForm.title} onChange={e => setPageForm(f => ({ ...f, title: e.target.value }))}
+                      placeholder="Page Title" data-testid="page-title-input"
+                      className="mt-1 rounded-xl border-[#EAE7E1]" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm">Type</Label>
+                    <Select value={pageForm.page_type} onValueChange={v => setPageForm(f => ({ ...f, page_type: v }))}>
+                      <SelectTrigger className="mt-1 rounded-xl border-[#EAE7E1]" data-testid="page-type-select"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="legal">Legal</SelectItem>
+                        <SelectItem value="blog">Blog</SelectItem>
+                        <SelectItem value="custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end gap-3 pb-1">
+                    <Switch checked={pageForm.published} onCheckedChange={v => setPageForm(f => ({ ...f, published: v }))} data-testid="page-published-toggle" />
+                    <Label className="text-sm">Published</Label>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-sm">Content (Markdown)</Label>
+                  <Textarea value={pageForm.content} onChange={e => setPageForm(f => ({ ...f, content: e.target.value }))}
+                    placeholder="Write page content in markdown..." rows={12} data-testid="page-content-textarea"
+                    className="mt-1 rounded-xl border-[#EAE7E1] font-mono text-sm" />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setEditingPage(null)} className="rounded-full border-[#EAE7E1]">Cancel</Button>
+                  <Button onClick={savePage} disabled={pageSaving} data-testid="save-page-btn"
+                    className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-6">
+                    {pageSaving ? 'Saving...' : 'Save Page'}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        {/* Settings (SMTP + Reminders) */}
         <TabsContent value="settings" className="space-y-6 mt-4">
+          {/* Reminder Settings */}
+          <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6" data-testid="admin-reminder-settings">
+            <div className="flex items-center gap-3 mb-5">
+              <Bell weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+              <div>
+                <h3 className="text-base font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Email Reminders</h3>
+                <p className="text-xs text-[#6E6E6A]">Send daily email reminders to users who haven't logged vitals</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Switch checked={reminderSettings.enabled} onCheckedChange={v => setReminderSettings(s => ({ ...s, enabled: v }))} data-testid="reminder-enabled-toggle" />
+                <Label className="text-sm text-[#2C2C2A]">Enable daily reminders</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#6E6E6A]" />
+                <Input type="time" value={reminderSettings.time} onChange={e => setReminderSettings(s => ({ ...s, time: e.target.value }))}
+                  className="rounded-xl border-[#EAE7E1] w-32" data-testid="reminder-time-input" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#EAE7E1]">
+              <Button onClick={saveReminderSettings} disabled={reminderSaving} data-testid="save-reminder-btn"
+                className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-6 text-sm">
+                {reminderSaving ? 'Saving...' : 'Save Schedule'}
+              </Button>
+              <Button variant="outline" onClick={triggerReminders} data-testid="trigger-reminders-btn"
+                className="rounded-full border-[#EAE7E1] text-sm">
+                Send Now
+              </Button>
+            </div>
+          </div>
+
+          {/* SMTP Config */}
           <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6" data-testid="admin-smtp-form">
             <div className="flex items-center gap-3 mb-5">
               <Envelope weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />

@@ -40,18 +40,18 @@ export default function ContentPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF9]">
       <nav className="fixed top-0 w-full z-50 glass-nav border-b border-[#EAE7E1]">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2.5">
-            <Heartbeat weight="duotone" className="w-7 h-7 text-[#2D4A3E]" />
-            <span className="text-lg font-semibold text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>VitalTrack</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between h-14 sm:h-16">
+          <Link to="/" className="flex items-center gap-2">
+            <Heartbeat weight="duotone" className="w-6 h-6 sm:w-7 sm:h-7 text-[#2D4A3E]" />
+            <span className="text-base sm:text-lg font-semibold text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>VitalTrack</span>
           </Link>
           <Link to="/" className="flex items-center gap-1.5 text-sm text-[#6E6E6A] hover:text-[#2C2C2A]">
             <ArrowLeft className="w-4 h-4" /> Back
           </Link>
         </div>
       </nav>
-      <div className="pt-28 pb-16 px-6 md:px-12 max-w-3xl mx-auto">
-        <div className="bg-white border border-[#EAE7E1] rounded-2xl p-8 md:p-12 shadow-[0_4px_24px_rgba(0,0,0,0.02)]"
+      <div className="pt-20 sm:pt-28 pb-12 sm:pb-16 px-4 sm:px-6 md:px-12 max-w-3xl mx-auto">
+        <div className="bg-white border border-[#EAE7E1] rounded-xl sm:rounded-2xl p-5 sm:p-8 md:p-12 shadow-[0_4px_24px_rgba(0,0,0,0.02)]"
           data-testid={`content-page-${pageKey}`}
           dangerouslySetInnerHTML={{ __html: renderContent(page.content) }} />
       </div>
