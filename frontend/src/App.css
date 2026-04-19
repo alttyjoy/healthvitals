@@ -57,7 +57,7 @@
 }
 
 .vital-input.status-normal { color: #588157; }
-.vital-input.status-warning { color: #B8860B; }
+.vital-input.status-warning { color: #ffff00; }
 .vital-input.status-critical { color: #D96C4E; }
 
 /* Smooth page transitions */

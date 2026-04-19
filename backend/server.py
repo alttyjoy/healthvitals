@@ -73,7 +73,7 @@ if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
 # Translations
 TRANSLATIONS = {
     "en": {
-        "app_name": "VitalTrack", "dashboard": "Dashboard", "daily_tracker": "Daily Tracker",
+        "app_name": "HealthVitalsTrack", "dashboard": "Dashboard", "daily_tracker": "Daily Tracker",
         "charts_trends": "Charts & Trends", "reports": "Reports", "billing": "Billing",
         "settings": "Settings", "admin_panel": "Admin Panel", "sign_out": "Sign Out",
         "welcome_back": "Welcome back", "active_vitals": "Active Vitals", "todays_entries": "Today's Entries",
@@ -95,7 +95,7 @@ TRANSLATIONS = {
         "critical": "Critical", "medical_disclaimer": "For informational tracking only. Not a medical device.",
     },
     "hi": {
-        "app_name": "VitalTrack", "dashboard": "डैशबोर्ड", "daily_tracker": "दैनिक ट्रैकर",
+        "app_name": "HealthVitalsTrack", "dashboard": "डैशबोर्ड", "daily_tracker": "दैनिक ट्रैकर",
         "charts_trends": "चार्ट और रुझान", "reports": "रिपोर्ट", "billing": "बिलिंग",
         "settings": "सेटिंग्स", "admin_panel": "एडमिन पैनल", "sign_out": "साइन आउट",
         "welcome_back": "वापस स्वागत है", "active_vitals": "सक्रिय वाइटल्स", "todays_entries": "आज की एंट्री",
@@ -117,7 +117,7 @@ TRANSLATIONS = {
         "critical": "गंभीर", "medical_disclaimer": "केवल सूचना ट्रैकिंग के लिए। चिकित्सा उपकरण नहीं है।",
     },
     "te": {
-        "app_name": "VitalTrack", "dashboard": "డాష్‌బోర్డ్", "daily_tracker": "దైనిక ట్రాకర్",
+        "app_name": "HealthVitalsTrack", "dashboard": "డాష్‌బోర్డ్", "daily_tracker": "దైనిక ట్రాకర్",
         "charts_trends": "చార్ట్‌లు & ట్రెండ్‌లు", "reports": "రిపోర్ట్‌లు", "billing": "బిల్లింగ్",
         "settings": "సెట్టింగ్‌లు", "admin_panel": "అడ్మిన్ ప్యానెల్", "sign_out": "సైన్ అవుట్",
         "welcome_back": "తిరిగి స్వాగతం", "active_vitals": "యాక్టివ్ వైటల్స్", "todays_entries": "ఈరోజు ఎంట్రీలు",

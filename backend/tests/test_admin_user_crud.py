@@ -14,6 +14,8 @@ ADMIN1_EMAIL = "admin@example.com"
 ADMIN1_PASSWORD = "admin123"
 ADMIN2_EMAIL = "mohanv44@gmail.com"
 ADMIN2_PASSWORD = "India@1947"
+ADMIN3_EMAIL = "alttyjoy@gmail.com"
+ADMIN2_PASSWORD = "India@1947"
 
 
 class TestAdminUserCRUD:
