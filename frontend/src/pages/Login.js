@@ -34,17 +34,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FAFAF9] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
       <div className="w-full max-w-md animate-fade-in-up">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5 mb-6">
-            <Heartbeat weight="duotone" className="w-8 h-8 text-[#2D4A3E]" />
-            <span className="text-xl font-semibold text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>VitalTrack</span>
+            <Heartbeat weight="duotone" className="w-8 h-8 text-[#0EA5E9]" />
+            <span className="text-xl font-semibold text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>VitalTrack</span>
           </Link>
-          <h1 className="text-2xl font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Welcome back</h1>
-          <p className="text-sm text-[#6E6E6A] mt-1">Sign in to your account</p>
+          <h1 className="text-2xl font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Welcome back</h1>
+          <p className="text-sm text-[#64748B] mt-1">Sign in to your account</p>
         </div>
-        <form onSubmit={handleSubmit} className="bg-white border border-[#EAE7E1] rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <form onSubmit={handleSubmit} className="bg-white border border-[#E2E8F0] rounded-2xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
           {error && (
             <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4" data-testid="login-error">
               {error}
@@ -52,36 +52,36 @@ export default function Login() {
           )}
           <div className="space-y-4">
             <div>
-              <Label htmlFor="email" className="text-sm text-[#2C2C2A]">Email</Label>
+              <Label htmlFor="email" className="text-sm text-[#0F172A]">Email</Label>
               <Input
                 id="email" type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com" required data-testid="login-email-input"
-                className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9] focus:ring-[#2D4A3E]/20 focus:border-[#2D4A3E]"
+                className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC] focus:ring-[#0EA5E9]/20 focus:border-[#0EA5E9]"
               />
             </div>
             <div>
-              <Label htmlFor="password" className="text-sm text-[#2C2C2A]">Password</Label>
+              <Label htmlFor="password" className="text-sm text-[#0F172A]">Password</Label>
               <Input
                 id="password" type="password" value={password} onChange={e => setPassword(e.target.value)}
                 placeholder="Enter your password" required data-testid="login-password-input"
-                className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9] focus:ring-[#2D4A3E]/20 focus:border-[#2D4A3E]"
+                className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC] focus:ring-[#0EA5E9]/20 focus:border-[#0EA5E9]"
               />
             </div>
           </div>
           <Button
             type="submit" disabled={loading} data-testid="login-submit-btn"
-            className="w-full mt-6 rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white py-3"
+            className="w-full mt-6 rounded-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white py-3"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
           <div className="text-center mt-3">
-            <Link to="/forgot-password" className="text-sm text-[#2D4A3E] hover:underline" data-testid="forgot-password-link">
+            <Link to="/forgot-password" className="text-sm text-[#0EA5E9] hover:underline" data-testid="forgot-password-link">
               Forgot your password?
             </Link>
           </div>
-          <p className="text-center text-sm text-[#6E6E6A] mt-3">
+          <p className="text-center text-sm text-[#64748B] mt-3">
             Don't have an account?{' '}
-            <Link to="/register" className="text-[#2D4A3E] font-medium hover:underline" data-testid="login-register-link">
+            <Link to="/register" className="text-[#0EA5E9] font-medium hover:underline" data-testid="login-register-link">
               Create one
             </Link>
           </p>

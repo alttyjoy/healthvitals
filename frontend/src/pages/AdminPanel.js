@@ -194,26 +194,26 @@ export default function AdminPanel() {
   useEffect(() => { if (tab === 'content' && !contentLoaded) loadContentPages(); }, [tab, contentLoaded]);
 
   if (loading) return (
-    <div className="space-y-4 animate-pulse">{[1,2,3,4].map(i => <div key={i} className="h-24 bg-[#EAE7E1] rounded-2xl" />)}</div>
+    <div className="space-y-4 animate-pulse">{[1,2,3,4].map(i => <div key={i} className="h-24 bg-[#E2E8F0] rounded-2xl" />)}</div>
   );
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up" data-testid="admin-panel">
       <div className="flex items-center gap-3">
-        <ShieldCheck weight="duotone" className="w-7 h-7 text-[#2D4A3E]" />
+        <ShieldCheck weight="duotone" className="w-7 h-7 text-[#0EA5E9]" />
         <div>
-          <h1 className="text-2xl font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Admin Panel</h1>
-          <p className="text-sm text-[#6E6E6A]">Manage users, plans, and platform analytics</p>
+          <h1 className="text-2xl font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Admin Panel</h1>
+          <p className="text-sm text-[#64748B]">Manage users, plans, and platform analytics</p>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="bg-white border border-[#EAE7E1] rounded-xl p-1 flex-wrap">
-          <TabsTrigger value="overview" data-testid="admin-tab-overview" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Overview</TabsTrigger>
-          <TabsTrigger value="users" data-testid="admin-tab-users" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Users</TabsTrigger>
-          <TabsTrigger value="analytics" data-testid="admin-tab-analytics" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Analytics</TabsTrigger>
-          <TabsTrigger value="content" data-testid="admin-tab-content" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Content</TabsTrigger>
-          <TabsTrigger value="settings" data-testid="admin-tab-settings" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#2D4A3E] data-[state=active]:text-white">Settings</TabsTrigger>
+        <TabsList className="bg-white border border-[#E2E8F0] rounded-xl p-1 flex-wrap">
+          <TabsTrigger value="overview" data-testid="admin-tab-overview" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Overview</TabsTrigger>
+          <TabsTrigger value="users" data-testid="admin-tab-users" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Users</TabsTrigger>
+          <TabsTrigger value="analytics" data-testid="admin-tab-analytics" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Analytics</TabsTrigger>
+          <TabsTrigger value="content" data-testid="admin-tab-content" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Content</TabsTrigger>
+          <TabsTrigger value="settings" data-testid="admin-tab-settings" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Settings</TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -227,31 +227,31 @@ export default function AdminPanel() {
                 <AdminStat icon={FileArrowDown} label="Exports" value={dashboard.total_exports} />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white border border-[#EAE7E1] rounded-2xl p-5">
-                  <p className="text-xs text-[#6E6E6A] uppercase tracking-wide mb-2">Plan Distribution</p>
+                <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5">
+                  <p className="text-xs text-[#64748B] uppercase tracking-wide mb-2">Plan Distribution</p>
                   <div className="space-y-3">
-                    <PlanBar label="Free" count={dashboard.free_users} total={dashboard.total_users} color="#6E6E6A" />
-                    <PlanBar label="Standard" count={dashboard.standard_users} total={dashboard.total_users} color="#2D4A3E" />
-                    <PlanBar label="Premium" count={dashboard.premium_users} total={dashboard.total_users} color="#D96C4E" />
+                    <PlanBar label="Free" count={dashboard.free_users} total={dashboard.total_users} color="#64748B" />
+                    <PlanBar label="Standard" count={dashboard.standard_users} total={dashboard.total_users} color="#0EA5E9" />
+                    <PlanBar label="Premium" count={dashboard.premium_users} total={dashboard.total_users} color="#EF4444" />
                   </div>
                 </div>
-                <div className="bg-white border border-[#EAE7E1] rounded-2xl p-5 md:col-span-2">
-                  <p className="text-xs text-[#6E6E6A] uppercase tracking-wide mb-3">Most Tracked Vitals</p>
+                <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 md:col-span-2">
+                  <p className="text-xs text-[#64748B] uppercase tracking-wide mb-3">Most Tracked Vitals</p>
                   <div className="space-y-2">
                     {Object.entries(dashboard.vital_usage || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([key, count]) => (
                       <div key={key} className="flex items-center justify-between py-1">
-                        <span className="text-sm text-[#2C2C2A]">{VITAL_MAP[key]?.name || key}</span>
-                        <Badge className="bg-[#FAFAF9] text-[#6E6E6A] border border-[#EAE7E1] text-xs">{count} entries</Badge>
+                        <span className="text-sm text-[#0F172A]">{VITAL_MAP[key]?.name || key}</span>
+                        <Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-xs">{count} entries</Badge>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
-              <div className="bg-white border border-[#EAE7E1] rounded-2xl p-5">
-                <p className="text-xs text-[#6E6E6A] uppercase tracking-wide mb-1">Revenue Metrics</p>
+              <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5">
+                <p className="text-xs text-[#64748B] uppercase tracking-wide mb-1">Revenue Metrics</p>
                 <div className="grid grid-cols-2 gap-4 mt-3">
-                  <div><p className="text-2xl font-semibold text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>₹{dashboard.mrr?.toLocaleString()}</p><p className="text-xs text-[#6E6E6A]">Monthly Recurring Revenue</p></div>
-                  <div><p className="text-2xl font-semibold text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>₹{dashboard.arr?.toLocaleString()}</p><p className="text-xs text-[#6E6E6A]">Annual Recurring Revenue</p></div>
+                  <div><p className="text-2xl font-semibold text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>₹{dashboard.mrr?.toLocaleString()}</p><p className="text-xs text-[#64748B]">Monthly Recurring Revenue</p></div>
+                  <div><p className="text-2xl font-semibold text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>₹{dashboard.arr?.toLocaleString()}</p><p className="text-xs text-[#64748B]">Annual Recurring Revenue</p></div>
                 </div>
               </div>
             </>
@@ -262,60 +262,60 @@ export default function AdminPanel() {
         <TabsContent value="users" className="space-y-4 mt-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1 max-w-md">
-              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6E6E6A]" />
+              <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748B]" />
               <Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && searchUsers()}
                 placeholder="Search by name or email..." data-testid="admin-user-search"
-                className="pl-10 rounded-xl border-[#EAE7E1] bg-white" />
+                className="pl-10 rounded-xl border-[#E2E8F0] bg-white" />
             </div>
             <div className="flex gap-2">
-              <Button onClick={searchUsers} className="rounded-xl bg-[#2D4A3E] text-white" data-testid="admin-user-search-btn">Search</Button>
-              <Button onClick={openAddUser} className="rounded-xl bg-[#588157] hover:bg-[#4a7049] text-white" data-testid="admin-add-user-btn">
+              <Button onClick={searchUsers} className="rounded-xl bg-[#0EA5E9] text-white" data-testid="admin-user-search-btn">Search</Button>
+              <Button onClick={openAddUser} className="rounded-xl bg-[#10B981] hover:bg-[#4a7049] text-white" data-testid="admin-add-user-btn">
                 <Plus className="w-4 h-4 mr-1" /> Add User
               </Button>
             </div>
           </div>
-          <p className="text-sm text-[#6E6E6A]">{usersTotal} users total</p>
-          <div className="bg-white border border-[#EAE7E1] rounded-2xl overflow-hidden overflow-x-auto">
+          <p className="text-sm text-[#64748B]">{usersTotal} users total</p>
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden overflow-x-auto">
             <table className="w-full text-sm" data-testid="admin-users-table">
               <thead>
-                <tr className="bg-[#FAFAF9] border-b border-[#EAE7E1]">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">User</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">Plan</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">Role</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide hidden sm:table-cell">Vitals</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide hidden sm:table-cell">Joined</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">Actions</th>
+                <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide">User</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide">Plan</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide">Role</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide hidden sm:table-cell">Vitals</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide hidden sm:table-cell">Joined</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id} className="border-b border-[#EAE7E1] hover:bg-[#FAFAF9] transition-colors">
+                  <tr key={u.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors">
                     <td className="px-5 py-3">
-                      <div className="font-medium text-[#2C2C2A]">{u.name}</div>
-                      <div className="text-xs text-[#6E6E6A]">{u.email}</div>
+                      <div className="font-medium text-[#0F172A]">{u.name}</div>
+                      <div className="text-xs text-[#64748B]">{u.email}</div>
                     </td>
                     <td className="px-5 py-3">
-                      <Badge className={`border-0 text-xs ${u.plan === 'premium' ? 'bg-[#D96C4E]/10 text-[#D96C4E]' : u.plan === 'standard' ? 'bg-[#2D4A3E]/10 text-[#2D4A3E]' : 'bg-[#EAE7E1] text-[#6E6E6A]'}`}>
+                      <Badge className={`border-0 text-xs ${u.plan === 'premium' ? 'bg-[#EF4444]/10 text-[#EF4444]' : u.plan === 'standard' ? 'bg-[#0EA5E9]/10 text-[#0EA5E9]' : 'bg-[#E2E8F0] text-[#64748B]'}`}>
                         {u.plan}
                       </Badge>
                     </td>
                     <td className="px-5 py-3">
-                      <Badge className={`border-0 text-xs ${u.role === 'super_admin' ? 'bg-[#D96C4E]/10 text-[#D96C4E]' : 'bg-[#EAE7E1] text-[#6E6E6A]'}`}>
+                      <Badge className={`border-0 text-xs ${u.role === 'super_admin' ? 'bg-[#EF4444]/10 text-[#EF4444]' : 'bg-[#E2E8F0] text-[#64748B]'}`}>
                         {u.role === 'super_admin' ? 'Admin' : 'User'}
                       </Badge>
                     </td>
-                    <td className="px-5 py-3 text-[#6E6E6A] hidden sm:table-cell">{u.enabled_vitals?.length || 0}</td>
-                    <td className="px-5 py-3 text-[#6E6E6A] text-xs hidden sm:table-cell">{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+                    <td className="px-5 py-3 text-[#64748B] hidden sm:table-cell">{u.enabled_vitals?.length || 0}</td>
+                    <td className="px-5 py-3 text-[#64748B] text-xs hidden sm:table-cell">{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
                     <td className="px-5 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`edit-user-${u.id}`}
                           onClick={() => openEditUser(u)}>
-                          <PencilSimple className="w-4 h-4 text-[#6E6E6A]" />
+                          <PencilSimple className="w-4 h-4 text-[#64748B]" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`delete-user-${u.id}`}
                           onClick={() => deleteUser(u.id, u.email)}>
-                          <Trash className="w-4 h-4 text-[#D96C4E]" />
+                          <Trash className="w-4 h-4 text-[#EF4444]" />
                         </Button>
                       </div>
                     </td>
@@ -338,27 +338,27 @@ export default function AdminPanel() {
                   <Label className="text-sm">Name</Label>
                   <Input value={userForm.name} onChange={e => setUserForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="Full name" data-testid="user-name-input"
-                    className="mt-1 rounded-xl border-[#EAE7E1]" />
+                    className="mt-1 rounded-xl border-[#E2E8F0]" />
                 </div>
                 <div>
                   <Label className="text-sm">Email</Label>
                   <Input value={userForm.email} onChange={e => setUserForm(f => ({ ...f, email: e.target.value }))}
                     placeholder="user@example.com" disabled={editingUser && !editingUser.isNew} data-testid="user-email-input"
-                    className="mt-1 rounded-xl border-[#EAE7E1]" />
+                    className="mt-1 rounded-xl border-[#E2E8F0]" />
                 </div>
                 {editingUser?.isNew && (
                   <div>
                     <Label className="text-sm">Password</Label>
                     <Input type="password" value={userForm.password} onChange={e => setUserForm(f => ({ ...f, password: e.target.value }))}
                       placeholder="Min 6 characters" data-testid="user-password-input"
-                      className="mt-1 rounded-xl border-[#EAE7E1]" />
+                      className="mt-1 rounded-xl border-[#E2E8F0]" />
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm">Role</Label>
                     <Select value={userForm.role} onValueChange={v => setUserForm(f => ({ ...f, role: v }))}>
-                      <SelectTrigger className="mt-1 rounded-xl border-[#EAE7E1]" data-testid="user-role-select"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="mt-1 rounded-xl border-[#E2E8F0]" data-testid="user-role-select"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="user">User</SelectItem>
                         <SelectItem value="super_admin">Admin</SelectItem>
@@ -368,7 +368,7 @@ export default function AdminPanel() {
                   <div>
                     <Label className="text-sm">Plan</Label>
                     <Select value={userForm.plan} onValueChange={v => setUserForm(f => ({ ...f, plan: v }))}>
-                      <SelectTrigger className="mt-1 rounded-xl border-[#EAE7E1]" data-testid="user-plan-select"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="mt-1 rounded-xl border-[#E2E8F0]" data-testid="user-plan-select"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="free">Free</SelectItem>
                         <SelectItem value="standard">Standard</SelectItem>
@@ -378,9 +378,9 @@ export default function AdminPanel() {
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setEditingUser(null)} className="rounded-full border-[#EAE7E1]">Cancel</Button>
+                  <Button variant="outline" onClick={() => setEditingUser(null)} className="rounded-full border-[#E2E8F0]">Cancel</Button>
                   <Button onClick={saveUser} disabled={userSaving} data-testid="save-user-btn"
-                    className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-6">
+                    className="rounded-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-6">
                     {userSaving ? 'Saving...' : editingUser?.isNew ? 'Create User' : 'Save Changes'}
                   </Button>
                 </div>
@@ -393,34 +393,34 @@ export default function AdminPanel() {
         <TabsContent value="analytics" className="space-y-6 mt-4">
           {analytics ? (
             <>
-              <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6">
-                <h3 className="text-base font-medium text-[#2C2C2A] mb-4" style={{ fontFamily: 'Outfit' }}>Daily Entries (Last 30 Days)</h3>
+              <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+                <h3 className="text-base font-medium text-[#0F172A] mb-4" style={{ fontFamily: 'Outfit' }}>Daily Entries (Last 30 Days)</h3>
                 {analytics.daily_entries?.length > 0 ? (
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={analytics.daily_entries}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#EAE7E1" />
-                      <XAxis dataKey="date" fontSize={10} tick={{ fill: '#6E6E6A' }} tickFormatter={v => v.slice(5)} />
-                      <YAxis fontSize={10} tick={{ fill: '#6E6E6A' }} />
-                      <Tooltip contentStyle={{ background: 'white', border: '1px solid #EAE7E1', borderRadius: 12 }} />
-                      <Bar dataKey="count" fill="#2D4A3E" radius={[4, 4, 0, 0]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                      <XAxis dataKey="date" fontSize={10} tick={{ fill: '#64748B' }} tickFormatter={v => v.slice(5)} />
+                      <YAxis fontSize={10} tick={{ fill: '#64748B' }} />
+                      <Tooltip contentStyle={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: 12 }} />
+                      <Bar dataKey="count" fill="#0EA5E9" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
-                ) : <p className="text-sm text-[#6E6E6A] text-center py-8">No entry data yet</p>}
+                ) : <p className="text-sm text-[#64748B] text-center py-8">No entry data yet</p>}
               </div>
-              <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6">
-                <h3 className="text-base font-medium text-[#2C2C2A] mb-4" style={{ fontFamily: 'Outfit' }}>Recent Audit Logs</h3>
+              <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+                <h3 className="text-base font-medium text-[#0F172A] mb-4" style={{ fontFamily: 'Outfit' }}>Recent Audit Logs</h3>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {(analytics.audit_logs || []).map((log, i) => (
-                    <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#FAFAF9] text-sm">
-                      <span className="text-[#2C2C2A]">{log.action}</span>
-                      <span className="text-xs text-[#6E6E6A]">{log.created_at ? new Date(log.created_at).toLocaleString() : ''}</span>
+                    <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#F8FAFC] text-sm">
+                      <span className="text-[#0F172A]">{log.action}</span>
+                      <span className="text-xs text-[#64748B]">{log.created_at ? new Date(log.created_at).toLocaleString() : ''}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </>
           ) : (
-            <div className="animate-pulse space-y-4">{[1,2].map(i => <div key={i} className="h-64 bg-[#EAE7E1] rounded-2xl" />)}</div>
+            <div className="animate-pulse space-y-4">{[1,2].map(i => <div key={i} className="h-64 bg-[#E2E8F0] rounded-2xl" />)}</div>
           )}
         </TabsContent>
 
@@ -428,35 +428,35 @@ export default function AdminPanel() {
         <TabsContent value="content" className="space-y-6 mt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Article weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
-              <h3 className="text-base font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Content Pages</h3>
+              <Article weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
+              <h3 className="text-base font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Content Pages</h3>
             </div>
             <Button onClick={() => { setEditingPage({ isNew: true }); setPageForm({ key: '', title: '', content: '', page_type: 'legal', published: true }); }}
-              data-testid="admin-add-page-btn" className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-4 text-sm">
+              data-testid="admin-add-page-btn" className="rounded-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-4 text-sm">
               <Plus className="w-4 h-4 mr-1" /> Add Page
             </Button>
           </div>
-          <div className="bg-white border border-[#EAE7E1] rounded-2xl overflow-hidden">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
             <table className="w-full text-sm" data-testid="admin-content-table">
               <thead>
-                <tr className="bg-[#FAFAF9] border-b border-[#EAE7E1]">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">Title</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide hidden sm:table-cell">Key</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide hidden sm:table-cell">Type</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">Status</th>
-                  <th className="text-right px-5 py-3 text-xs font-semibold text-[#2C2C2A] uppercase tracking-wide">Actions</th>
+                <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide">Title</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide hidden sm:table-cell">Key</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide hidden sm:table-cell">Type</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide">Status</th>
+                  <th className="text-right px-5 py-3 text-xs font-semibold text-[#0F172A] uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {contentPages.map(page => (
-                  <tr key={page.key} className="border-b border-[#EAE7E1] hover:bg-[#FAFAF9]">
-                    <td className="px-5 py-3 font-medium text-[#2C2C2A]">{page.title}</td>
-                    <td className="px-5 py-3 text-[#6E6E6A] hidden sm:table-cell">/page/{page.key}</td>
+                  <tr key={page.key} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]">
+                    <td className="px-5 py-3 font-medium text-[#0F172A]">{page.title}</td>
+                    <td className="px-5 py-3 text-[#64748B] hidden sm:table-cell">/page/{page.key}</td>
                     <td className="px-5 py-3 hidden sm:table-cell">
-                      <Badge className="bg-[#EAE7E1] text-[#6E6E6A] border-0 text-xs">{page.page_type || 'legal'}</Badge>
+                      <Badge className="bg-[#E2E8F0] text-[#64748B] border-0 text-xs">{page.page_type || 'legal'}</Badge>
                     </td>
                     <td className="px-5 py-3">
-                      <Badge className={`border-0 text-xs ${page.published !== false ? 'bg-[#588157]/10 text-[#588157]' : 'bg-[#D96C4E]/10 text-[#D96C4E]'}`}>
+                      <Badge className={`border-0 text-xs ${page.published !== false ? 'bg-[#10B981]/10 text-[#10B981]' : 'bg-[#EF4444]/10 text-[#EF4444]'}`}>
                         {page.published !== false ? 'Published' : 'Draft'}
                       </Badge>
                     </td>
@@ -468,12 +468,12 @@ export default function AdminPanel() {
                             setEditingPage(page);
                             setPageForm({ key: page.key, title: page.title, content: page.content || '', page_type: page.page_type || 'legal', published: page.published !== false });
                           }}>
-                          <PencilSimple className="w-4 h-4 text-[#6E6E6A]" />
+                          <PencilSimple className="w-4 h-4 text-[#64748B]" />
                         </Button>
                         {!page.builtin && (
                           <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`delete-page-${page.key}`}
                             onClick={() => deletePage(page.key)}>
-                            <Trash className="w-4 h-4 text-[#D96C4E]" />
+                            <Trash className="w-4 h-4 text-[#EF4444]" />
                           </Button>
                         )}
                       </div>
@@ -481,7 +481,7 @@ export default function AdminPanel() {
                   </tr>
                 ))}
                 {contentPages.length === 0 && (
-                  <tr><td colSpan={5} className="px-5 py-8 text-center text-[#6E6E6A]">No content pages yet</td></tr>
+                  <tr><td colSpan={5} className="px-5 py-8 text-center text-[#64748B]">No content pages yet</td></tr>
                 )}
               </tbody>
             </table>
@@ -501,20 +501,20 @@ export default function AdminPanel() {
                     <Label className="text-sm">Page Key (URL slug)</Label>
                     <Input value={pageForm.key} onChange={e => setPageForm(f => ({ ...f, key: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))}
                       placeholder="my-page" disabled={editingPage && !editingPage.isNew} data-testid="page-key-input"
-                      className="mt-1 rounded-xl border-[#EAE7E1]" />
+                      className="mt-1 rounded-xl border-[#E2E8F0]" />
                   </div>
                   <div>
                     <Label className="text-sm">Title</Label>
                     <Input value={pageForm.title} onChange={e => setPageForm(f => ({ ...f, title: e.target.value }))}
                       placeholder="Page Title" data-testid="page-title-input"
-                      className="mt-1 rounded-xl border-[#EAE7E1]" />
+                      className="mt-1 rounded-xl border-[#E2E8F0]" />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm">Type</Label>
                     <Select value={pageForm.page_type} onValueChange={v => setPageForm(f => ({ ...f, page_type: v }))}>
-                      <SelectTrigger className="mt-1 rounded-xl border-[#EAE7E1]" data-testid="page-type-select"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="mt-1 rounded-xl border-[#E2E8F0]" data-testid="page-type-select"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="legal">Legal</SelectItem>
                         <SelectItem value="blog">Blog</SelectItem>
@@ -531,12 +531,12 @@ export default function AdminPanel() {
                   <Label className="text-sm">Content (Markdown)</Label>
                   <Textarea value={pageForm.content} onChange={e => setPageForm(f => ({ ...f, content: e.target.value }))}
                     placeholder="Write page content in markdown..." rows={12} data-testid="page-content-textarea"
-                    className="mt-1 rounded-xl border-[#EAE7E1] font-mono text-sm" />
+                    className="mt-1 rounded-xl border-[#E2E8F0] font-mono text-sm" />
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setEditingPage(null)} className="rounded-full border-[#EAE7E1]">Cancel</Button>
+                  <Button variant="outline" onClick={() => setEditingPage(null)} className="rounded-full border-[#E2E8F0]">Cancel</Button>
                   <Button onClick={savePage} disabled={pageSaving} data-testid="save-page-btn"
-                    className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-6">
+                    className="rounded-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-6">
                     {pageSaving ? 'Saving...' : 'Save Page'}
                   </Button>
                 </div>
@@ -548,85 +548,85 @@ export default function AdminPanel() {
         {/* Settings (SMTP + Reminders) */}
         <TabsContent value="settings" className="space-y-6 mt-4">
           {/* Reminder Settings */}
-          <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6" data-testid="admin-reminder-settings">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6" data-testid="admin-reminder-settings">
             <div className="flex items-center gap-3 mb-5">
-              <Bell weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+              <Bell weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
               <div>
-                <h3 className="text-base font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Email Reminders</h3>
-                <p className="text-xs text-[#6E6E6A]">Send daily email reminders to users who haven't logged vitals</p>
+                <h3 className="text-base font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Email Reminders</h3>
+                <p className="text-xs text-[#64748B]">Send daily email reminders to users who haven't logged vitals</p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex items-center gap-3">
                 <Switch checked={reminderSettings.enabled} onCheckedChange={v => setReminderSettings(s => ({ ...s, enabled: v }))} data-testid="reminder-enabled-toggle" />
-                <Label className="text-sm text-[#2C2C2A]">Enable daily reminders</Label>
+                <Label className="text-sm text-[#0F172A]">Enable daily reminders</Label>
               </div>
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#6E6E6A]" />
+                <Clock className="w-4 h-4 text-[#64748B]" />
                 <Input type="time" value={reminderSettings.time} onChange={e => setReminderSettings(s => ({ ...s, time: e.target.value }))}
-                  className="rounded-xl border-[#EAE7E1] w-32" data-testid="reminder-time-input" />
+                  className="rounded-xl border-[#E2E8F0] w-32" data-testid="reminder-time-input" />
               </div>
             </div>
-            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#EAE7E1]">
+            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#E2E8F0]">
               <Button onClick={saveReminderSettings} disabled={reminderSaving} data-testid="save-reminder-btn"
-                className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-6 text-sm">
+                className="rounded-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-6 text-sm">
                 {reminderSaving ? 'Saving...' : 'Save Schedule'}
               </Button>
               <Button variant="outline" onClick={triggerReminders} data-testid="trigger-reminders-btn"
-                className="rounded-full border-[#EAE7E1] text-sm">
+                className="rounded-full border-[#E2E8F0] text-sm">
                 Send Now
               </Button>
             </div>
           </div>
 
           {/* SMTP Config */}
-          <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6" data-testid="admin-smtp-form">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6" data-testid="admin-smtp-form">
             <div className="flex items-center gap-3 mb-5">
-              <Envelope weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+              <Envelope weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
               <div>
-                <h3 className="text-base font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>SMTP Configuration</h3>
-                <p className="text-xs text-[#6E6E6A]">Configure email settings for reminders and notifications</p>
+                <h3 className="text-base font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>SMTP Configuration</h3>
+                <p className="text-xs text-[#64748B]">Configure email settings for reminders and notifications</p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm text-[#2C2C2A]">SMTP Host</Label>
+                <Label className="text-sm text-[#0F172A]">SMTP Host</Label>
                 <Input value={smtp.smtp_host || ''} onChange={e => setSmtp(s => ({ ...s, smtp_host: e.target.value }))}
-                  placeholder="smtp.gmail.com" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-host" />
+                  placeholder="smtp.gmail.com" className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC]" data-testid="smtp-host" />
               </div>
               <div>
-                <Label className="text-sm text-[#2C2C2A]">SMTP Port</Label>
+                <Label className="text-sm text-[#0F172A]">SMTP Port</Label>
                 <Input type="number" value={smtp.smtp_port || ''} onChange={e => setSmtp(s => ({ ...s, smtp_port: parseInt(e.target.value) || 0 }))}
-                  placeholder="587" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-port" />
+                  placeholder="587" className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC]" data-testid="smtp-port" />
               </div>
               <div>
-                <Label className="text-sm text-[#2C2C2A]">Username</Label>
+                <Label className="text-sm text-[#0F172A]">Username</Label>
                 <Input value={smtp.smtp_username || ''} onChange={e => setSmtp(s => ({ ...s, smtp_username: e.target.value }))}
-                  placeholder="your@email.com" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-username" />
+                  placeholder="your@email.com" className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC]" data-testid="smtp-username" />
               </div>
               <div>
-                <Label className="text-sm text-[#2C2C2A]">Password</Label>
+                <Label className="text-sm text-[#0F172A]">Password</Label>
                 <Input type="password" value={smtp.smtp_password || ''} onChange={e => setSmtp(s => ({ ...s, smtp_password: e.target.value }))}
-                  placeholder="App password or SMTP password" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-password" />
+                  placeholder="App password or SMTP password" className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC]" data-testid="smtp-password" />
               </div>
               <div>
-                <Label className="text-sm text-[#2C2C2A]">From Email</Label>
+                <Label className="text-sm text-[#0F172A]">From Email</Label>
                 <Input value={smtp.smtp_from_email || ''} onChange={e => setSmtp(s => ({ ...s, smtp_from_email: e.target.value }))}
-                  placeholder="noreply@vitaltrack.in" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-from-email" />
+                  placeholder="noreply@vitaltrack.in" className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC]" data-testid="smtp-from-email" />
               </div>
               <div>
-                <Label className="text-sm text-[#2C2C2A]">From Name</Label>
+                <Label className="text-sm text-[#0F172A]">From Name</Label>
                 <Input value={smtp.smtp_from_name || ''} onChange={e => setSmtp(s => ({ ...s, smtp_from_name: e.target.value }))}
-                  placeholder="VitalTrack" className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" data-testid="smtp-from-name" />
+                  placeholder="VitalTrack" className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC]" data-testid="smtp-from-name" />
               </div>
             </div>
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#EAE7E1]">
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#E2E8F0]">
               <div className="flex items-center gap-3">
                 <Switch checked={smtp.smtp_use_tls !== false} onCheckedChange={v => setSmtp(s => ({ ...s, smtp_use_tls: v }))} data-testid="smtp-tls-toggle" />
-                <Label className="text-sm text-[#2C2C2A]">Use TLS</Label>
+                <Label className="text-sm text-[#0F172A]">Use TLS</Label>
               </div>
               <Button onClick={saveSmtp} disabled={smtpSaving} data-testid="smtp-save-btn"
-                className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-6">
+                className="rounded-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-6">
                 {smtpSaving ? 'Saving...' : 'Save SMTP Settings'}
               </Button>
             </div>
@@ -639,12 +639,12 @@ export default function AdminPanel() {
 
 function AdminStat({ icon: Icon, label, value }) {
   return (
-    <div className="bg-white border border-[#EAE7E1] rounded-2xl p-5">
+    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-2">
-        <Icon weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
-        <span className="text-xs text-[#6E6E6A] uppercase tracking-wide">{label}</span>
+        <Icon weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
+        <span className="text-xs text-[#64748B] uppercase tracking-wide">{label}</span>
       </div>
-      <p className="text-2xl font-semibold text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{value}</p>
+      <p className="text-2xl font-semibold text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{value}</p>
     </div>
   );
 }
@@ -654,10 +654,10 @@ function PlanBar({ label, count, total, color }) {
   return (
     <div>
       <div className="flex justify-between text-sm mb-1">
-        <span className="text-[#2C2C2A]">{label}</span>
-        <span className="text-[#6E6E6A]">{count}</span>
+        <span className="text-[#0F172A]">{label}</span>
+        <span className="text-[#64748B]">{count}</span>
       </div>
-      <div className="h-2 bg-[#FAFAF9] rounded-full overflow-hidden">
+      <div className="h-2 bg-[#F8FAFC] rounded-full overflow-hidden">
         <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
     </div>

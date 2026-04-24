@@ -146,50 +146,50 @@ export default function Settings() {
   return (
     <div className="max-w-3xl mx-auto space-y-8 animate-fade-in-up" data-testid="settings-page">
       <div>
-        <h1 className="text-2xl font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{t('settings')}</h1>
-        <p className="text-sm text-[#6E6E6A]">Manage your profile, vitals, and preferences</p>
+        <h1 className="text-2xl font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{t('settings')}</h1>
+        <p className="text-sm text-[#64748B]">Manage your profile, vitals, and preferences</p>
       </div>
 
       {/* Profile */}
-      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex items-center gap-3 mb-5">
-          <User weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
-          <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{t('profile')}</h2>
+          <User weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
+          <h2 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{t('profile')}</h2>
         </div>
         <div className="space-y-4">
           <div>
-            <Label className="text-sm text-[#2C2C2A]">{t('full_name')}</Label>
+            <Label className="text-sm text-[#0F172A]">{t('full_name')}</Label>
             <Input value={name} onChange={e => setName(e.target.value)} data-testid="settings-name-input"
-              className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9]" />
+              className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC]" />
           </div>
           <div>
-            <Label className="text-sm text-[#2C2C2A]">{t('email')}</Label>
-            <Input value={user?.email || ''} disabled className="mt-1.5 rounded-xl border-[#EAE7E1] bg-[#FAFAF9] opacity-60" />
+            <Label className="text-sm text-[#0F172A]">{t('email')}</Label>
+            <Input value={user?.email || ''} disabled className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC] opacity-60" />
           </div>
           <div className="flex items-center gap-3">
-            <Badge className="bg-[#2D4A3E]/10 text-[#2D4A3E] border-0">{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan</Badge>
-            <Badge className="bg-[#EAE7E1] text-[#6E6E6A] border-0">{user?.role}</Badge>
+            <Badge className="bg-[#0EA5E9]/10 text-[#0EA5E9] border-0">{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan</Badge>
+            <Badge className="bg-[#E2E8F0] text-[#64748B] border-0">{user?.role}</Badge>
           </div>
           <Button onClick={handleSaveProfile} disabled={saving} data-testid="settings-save-profile-btn"
-            className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-6">
+            className="rounded-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-6">
             {saving ? 'Saving...' : t('save_profile')}
           </Button>
         </div>
       </div>
 
       {/* Preferences: Dark Mode + Language */}
-      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex items-center gap-3 mb-5">
-          <Gear weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
-          <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Preferences</h2>
+          <Gear weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
+          <h2 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Preferences</h2>
         </div>
         <div className="space-y-4">
           <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
-              <Moon weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+              <Moon weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
               <div>
-                <p className="text-sm font-medium text-[#2C2C2A]">{t('dark_mode')}</p>
-                <p className="text-xs text-[#6E6E6A]">Switch between light and dark theme</p>
+                <p className="text-sm font-medium text-[#0F172A]">{t('dark_mode')}</p>
+                <p className="text-xs text-[#64748B]">Switch between light and dark theme</p>
               </div>
             </div>
             <Switch checked={darkMode} onCheckedChange={toggleDarkMode} data-testid="dark-mode-toggle" />
@@ -197,14 +197,14 @@ export default function Settings() {
           <Separator />
           <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
-              <Globe weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
+              <Globe weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
               <div>
-                <p className="text-sm font-medium text-[#2C2C2A]">{t('language')}</p>
-                <p className="text-xs text-[#6E6E6A]">Choose your preferred language</p>
+                <p className="text-sm font-medium text-[#0F172A]">{t('language')}</p>
+                <p className="text-xs text-[#64748B]">Choose your preferred language</p>
               </div>
             </div>
             <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="w-[160px] rounded-xl border-[#EAE7E1]" data-testid="language-select">
+              <SelectTrigger className="w-[160px] rounded-xl border-[#E2E8F0]" data-testid="language-select">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -218,17 +218,17 @@ export default function Settings() {
       </div>
 
       {/* Vital Management */}
-      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <Heartbeat weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
-            <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{t('manage_vitals')}</h2>
+            <Heartbeat weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
+            <h2 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{t('manage_vitals')}</h2>
           </div>
-          <Badge className="bg-[#FAFAF9] text-[#6E6E6A] border border-[#EAE7E1]">
+          <Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0]">
             {enabledVitals.length} / {vitalLimit} enabled
           </Badge>
         </div>
-        <p className="text-sm text-[#6E6E6A] mb-4">
+        <p className="text-sm text-[#64748B] mb-4">
           Your {plan} plan allows up to {vitalLimit} vitals. Toggle the ones you want to track.
         </p>
         <div className="space-y-1">
@@ -236,12 +236,12 @@ export default function Settings() {
             const isEnabled = enabledVitals.includes(vital.key);
             const isAtLimit = !isEnabled && enabledVitals.length >= vitalLimit;
             return (
-              <div key={vital.key} className={`flex items-center justify-between py-3 px-4 rounded-xl transition-colors ${isEnabled ? 'bg-[#2D4A3E]/[0.03]' : 'hover:bg-[#FAFAF9]'}`}>
+              <div key={vital.key} className={`flex items-center justify-between py-3 px-4 rounded-xl transition-colors ${isEnabled ? 'bg-[#0EA5E9]/[0.03]' : 'hover:bg-[#F8FAFC]'}`}>
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: vital.color }} />
                   <div>
-                    <span className="text-sm font-medium text-[#2C2C2A]">{vital.name}</span>
-                    <span className="text-xs text-[#6E6E6A] ml-2">{vital.unit}</span>
+                    <span className="text-sm font-medium text-[#0F172A]">{vital.name}</span>
+                    <span className="text-xs text-[#64748B] ml-2">{vital.unit}</span>
                   </div>
                 </div>
                 <Switch
@@ -255,21 +255,21 @@ export default function Settings() {
           })}
         </div>
         {enabledVitals.length >= vitalLimit && (
-          <p className="text-xs text-[#D96C4E] mt-3">You've reached your plan limit. Upgrade to enable more vitals.</p>
+          <p className="text-xs text-[#EF4444] mt-3">You've reached your plan limit. Upgrade to enable more vitals.</p>
         )}
       </div>
 
       {/* Shared Reports */}
-      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <LinkSimple weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
-            <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{t('shared_reports')}</h2>
+            <LinkSimple weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
+            <h2 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{t('shared_reports')}</h2>
           </div>
           {canShare && (
             <Dialog open={showCreateShare} onOpenChange={setShowCreateShare}>
               <DialogTrigger asChild>
-                <Button className="rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-5 text-sm" data-testid="create-shared-report-btn">
+                <Button className="rounded-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-5 text-sm" data-testid="create-shared-report-btn">
                   {t('create_shared_report')}
                 </Button>
               </DialogTrigger>
@@ -317,7 +317,7 @@ export default function Settings() {
                     </Select>
                   </div>
                   <Button onClick={handleCreateSharedReport} disabled={creatingShare} data-testid="create-share-submit-btn"
-                    className="w-full rounded-full bg-[#2D4A3E] hover:bg-[#1E332A] text-white">
+                    className="w-full rounded-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white">
                     {creatingShare ? 'Creating...' : 'Create & Copy Link'}
                   </Button>
                 </div>
@@ -327,31 +327,31 @@ export default function Settings() {
         </div>
 
         {!canShare ? (
-          <p className="text-sm text-[#6E6E6A]">Sharing requires Standard or Premium plan. Upgrade to share reports.</p>
+          <p className="text-sm text-[#64748B]">Sharing requires Standard or Premium plan. Upgrade to share reports.</p>
         ) : sharedReports.length === 0 ? (
-          <p className="text-sm text-[#6E6E6A]">No shared reports yet. Create one to share your health data securely.</p>
+          <p className="text-sm text-[#64748B]">No shared reports yet. Create one to share your health data securely.</p>
         ) : (
           <div className="space-y-2">
             {sharedReports.filter(r => r.active).map(report => (
-              <div key={report.id} className="flex items-center justify-between py-3 px-4 rounded-xl border border-[#EAE7E1] hover:bg-[#FAFAF9]">
+              <div key={report.id} className="flex items-center justify-between py-3 px-4 rounded-xl border border-[#E2E8F0] hover:bg-[#F8FAFC]">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-[#2C2C2A] truncate">
+                    <span className="text-sm text-[#0F172A] truncate">
                       {(report.vital_keys || []).map(vk => VITAL_MAP[vk]?.name || vk).join(', ')}
                     </span>
-                    {report.has_password && <Lock className="w-3.5 h-3.5 text-[#6E6E6A]" />}
+                    {report.has_password && <Lock className="w-3.5 h-3.5 text-[#64748B]" />}
                   </div>
-                  <p className="text-xs text-[#6E6E6A]">{report.start_date} to {report.end_date}</p>
+                  <p className="text-xs text-[#64748B]">{report.start_date} to {report.end_date}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button variant="ghost" size="icon" onClick={() => copyShareLink(report.token)} className="h-8 w-8" data-testid={`copy-share-${report.id}`}>
-                    <Copy className="w-4 h-4 text-[#6E6E6A]" />
+                    <Copy className="w-4 h-4 text-[#64748B]" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => window.open(`/shared/${report.token}`, '_blank')} className="h-8 w-8">
-                    <Eye className="w-4 h-4 text-[#6E6E6A]" />
+                    <Eye className="w-4 h-4 text-[#64748B]" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => revokeShare(report.id)} className="h-8 w-8" data-testid={`revoke-share-${report.id}`}>
-                    <Trash className="w-4 h-4 text-[#D96C4E]" />
+                    <Trash className="w-4 h-4 text-[#EF4444]" />
                   </Button>
                 </div>
               </div>
@@ -361,32 +361,32 @@ export default function Settings() {
       </div>
 
       {/* Referral Program */}
-      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex items-center gap-3 mb-5">
-          <Gift weight="duotone" className="w-5 h-5 text-[#2D4A3E]" />
-          <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Referral Program</h2>
+          <Gift weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
+          <h2 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Referral Program</h2>
         </div>
-        <p className="text-sm text-[#6E6E6A] mb-4">
+        <p className="text-sm text-[#64748B] mb-4">
           Share your code with a friend. When they sign up and apply it, both of you get 1 month of Standard plan free!
         </p>
 
         {/* Your Referral Code */}
         {referralCode && (
           <div className="mb-5">
-            <Label className="text-sm text-[#2C2C2A]">Your Referral Code</Label>
+            <Label className="text-sm text-[#0F172A]">Your Referral Code</Label>
             <div className="flex items-center gap-2 mt-1.5">
-              <div className="flex-1 bg-[#FAFAF9] border border-[#EAE7E1] rounded-xl px-4 py-2.5 font-mono text-base text-[#2C2C2A] tracking-wider" data-testid="referral-code-display">
+              <div className="flex-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-4 py-2.5 font-mono text-base text-[#0F172A] tracking-wider" data-testid="referral-code-display">
                 {referralCode}
               </div>
-              <Button variant="outline" onClick={copyReferralCode} className="rounded-xl border-[#EAE7E1] px-3" data-testid="copy-referral-code-btn">
+              <Button variant="outline" onClick={copyReferralCode} className="rounded-xl border-[#E2E8F0] px-3" data-testid="copy-referral-code-btn">
                 <Copy className="w-4 h-4" />
               </Button>
             </div>
             <div className="flex gap-4 mt-3">
-              <div className="flex items-center gap-1.5 text-sm text-[#6E6E6A]">
+              <div className="flex items-center gap-1.5 text-sm text-[#64748B]">
                 <UserPlus className="w-4 h-4" /> {referralStats.total_referrals} referred
               </div>
-              <div className="flex items-center gap-1.5 text-sm text-[#588157]">
+              <div className="flex items-center gap-1.5 text-sm text-[#10B981]">
                 <Check weight="bold" className="w-4 h-4" /> {referralStats.successful_referrals} successful
               </div>
             </div>
@@ -397,18 +397,18 @@ export default function Settings() {
         {!user?.referred_by && (
           <>
             <Separator className="my-4" />
-            <Label className="text-sm text-[#2C2C2A]">Have a referral code?</Label>
+            <Label className="text-sm text-[#0F172A]">Have a referral code?</Label>
             <div className="flex items-center gap-2 mt-1.5">
               <Input
                 value={referralInput}
                 onChange={e => setReferralInput(e.target.value)}
                 placeholder="Enter referral code"
-                className="rounded-xl border-[#EAE7E1] bg-[#FAFAF9] font-mono uppercase"
+                className="rounded-xl border-[#E2E8F0] bg-[#F8FAFC] font-mono uppercase"
                 data-testid="referral-input"
               />
               <Button onClick={handleApplyReferral} disabled={applyingReferral}
                 data-testid="apply-referral-btn"
-                className="rounded-xl bg-[#2D4A3E] hover:bg-[#1E332A] text-white px-5">
+                className="rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-5">
                 {applyingReferral ? 'Applying...' : 'Apply'}
               </Button>
             </div>
@@ -416,7 +416,7 @@ export default function Settings() {
         )}
 
         {user?.referred_by && (
-          <div className="mt-3 text-sm text-[#588157] flex items-center gap-1.5">
+          <div className="mt-3 text-sm text-[#10B981] flex items-center gap-1.5">
             <Check weight="bold" className="w-4 h-4" /> Referral code applied: {user.referred_by}
           </div>
         )}

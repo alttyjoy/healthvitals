@@ -41,7 +41,7 @@ export default function Dashboard() {
 
   if (loading) return (
     <div className="space-y-6 animate-pulse">
-      {[1,2,3].map(i => <div key={i} className="h-32 bg-[#EAE7E1] rounded-2xl" />)}
+      {[1,2,3].map(i => <div key={i} className="h-32 bg-[#E2E8F0] rounded-2xl" />)}
     </div>
   );
 
@@ -49,10 +49,10 @@ export default function Dashboard() {
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in-up" data-testid="user-dashboard">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>
+        <h1 className="text-3xl font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>
           Welcome back, {user?.name?.split(' ')[0]}
         </h1>
-        <p className="text-sm text-[#6E6E6A] mt-1">
+        <p className="text-sm text-[#64748B] mt-1">
           {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
       </div>
@@ -63,13 +63,13 @@ export default function Dashboard() {
         <StatCard label="Today's Entries" value={todayEntries.length} sub={`of ${enabledVitals.length} expected`} />
         <StatCard label="This Week" value={recentEntries.length} sub="total entries" />
         <StatCard label="Plan" value={user?.plan?.charAt(0).toUpperCase() + user?.plan?.slice(1)} sub={
-          <Link to="/billing" className="text-[#2D4A3E] hover:underline text-xs">Manage</Link>
+          <Link to="/billing" className="text-[#0EA5E9] hover:underline text-xs">Manage</Link>
         } />
       </div>
 
       {/* Setup prompt if no vitals enabled */}
       {enabledVitals.length === 0 && (
-        <div className="bg-[#2D4A3E] rounded-2xl p-8 text-white">
+        <div className="bg-[#0EA5E9] rounded-2xl p-8 text-white">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">
               <Plus weight="bold" className="w-6 h-6" />
@@ -78,7 +78,7 @@ export default function Dashboard() {
               <h3 className="text-lg font-medium mb-1" style={{ fontFamily: 'Outfit' }}>Get Started</h3>
               <p className="text-white/70 text-sm mb-4">Enable vitals you want to track. Your {user?.plan} plan allows up to {user?.plan === 'free' ? 2 : user?.plan === 'standard' ? 6 : 12} vitals.</p>
               <Link to="/settings">
-                <Button className="rounded-full bg-white text-[#2D4A3E] hover:bg-white/90 px-6" data-testid="enable-vitals-btn">
+                <Button className="rounded-full bg-white text-[#0EA5E9] hover:bg-white/90 px-6" data-testid="enable-vitals-btn">
                   Enable Vitals <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
@@ -89,26 +89,26 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Insights */}
-        <div className="lg:col-span-2 bg-white border border-[#EAE7E1] rounded-2xl p-6">
+        <div className="lg:col-span-2 bg-white border border-[#E2E8F0] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>Health Insights</h2>
-            <Badge className="bg-[#2D4A3E]/10 text-[#2D4A3E] border-0 text-xs">This Week</Badge>
+            <h2 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Health Insights</h2>
+            <Badge className="bg-[#0EA5E9]/10 text-[#0EA5E9] border-0 text-xs">This Week</Badge>
           </div>
           {insights.length === 0 ? (
-            <p className="text-sm text-[#6E6E6A] py-8 text-center">Start tracking to see insights</p>
+            <p className="text-sm text-[#64748B] py-8 text-center">Start tracking to see insights</p>
           ) : (
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {insights.map((ins, i) => {
                 const Icon = insightIcons[ins.type] || Info;
                 const colors = { warning: 'text-amber-600 bg-amber-50', success: 'text-green-600 bg-green-50', info: 'text-blue-600 bg-blue-50' };
                 return (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-[#FAFAF9] transition-colors">
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${colors[ins.type] || colors.info}`}>
                       <Icon weight="duotone" className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-sm text-[#2C2C2A]">{ins.message}</p>
-                      <p className="text-xs text-[#6E6E6A] mt-0.5">{VITAL_MAP[ins.vital_key]?.name}</p>
+                      <p className="text-sm text-[#0F172A]">{ins.message}</p>
+                      <p className="text-xs text-[#64748B] mt-0.5">{VITAL_MAP[ins.vital_key]?.name}</p>
                     </div>
                   </div>
                 );
@@ -119,31 +119,31 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="space-y-4">
-          <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6">
-            <h2 className="text-lg font-medium text-[#2C2C2A] mb-4" style={{ fontFamily: 'Outfit' }}>Quick Actions</h2>
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+            <h2 className="text-lg font-medium text-[#0F172A] mb-4" style={{ fontFamily: 'Outfit' }}>Quick Actions</h2>
             <div className="space-y-2">
               <Link to="/tracker" data-testid="quick-action-tracker">
-                <Button variant="outline" className="w-full justify-start rounded-xl border-[#EAE7E1] text-[#2C2C2A] hover:bg-[#FAFAF9] py-3">
-                  <Table weight="duotone" className="w-5 h-5 mr-3 text-[#2D4A3E]" /> Log Today's Vitals
+                <Button variant="outline" className="w-full justify-start rounded-xl border-[#E2E8F0] text-[#0F172A] hover:bg-[#F8FAFC] py-3">
+                  <Table weight="duotone" className="w-5 h-5 mr-3 text-[#0EA5E9]" /> Log Today's Vitals
                 </Button>
               </Link>
               <Link to="/charts" data-testid="quick-action-charts">
-                <Button variant="outline" className="w-full justify-start rounded-xl border-[#EAE7E1] text-[#2C2C2A] hover:bg-[#FAFAF9] py-3">
-                  <ChartLine weight="duotone" className="w-5 h-5 mr-3 text-[#2D4A3E]" /> View Trends
+                <Button variant="outline" className="w-full justify-start rounded-xl border-[#E2E8F0] text-[#0F172A] hover:bg-[#F8FAFC] py-3">
+                  <ChartLine weight="duotone" className="w-5 h-5 mr-3 text-[#0EA5E9]" /> View Trends
                 </Button>
               </Link>
               <Link to="/reports" data-testid="quick-action-reports">
-                <Button variant="outline" className="w-full justify-start rounded-xl border-[#EAE7E1] text-[#2C2C2A] hover:bg-[#FAFAF9] py-3">
-                  <Lightning weight="duotone" className="w-5 h-5 mr-3 text-[#2D4A3E]" /> Export Report
+                <Button variant="outline" className="w-full justify-start rounded-xl border-[#E2E8F0] text-[#0F172A] hover:bg-[#F8FAFC] py-3">
+                  <Lightning weight="duotone" className="w-5 h-5 mr-3 text-[#0EA5E9]" /> Export Report
                 </Button>
               </Link>
             </div>
           </div>
           {/* Enabled Vitals */}
-          <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6">
-            <h2 className="text-lg font-medium text-[#2C2C2A] mb-4" style={{ fontFamily: 'Outfit' }}>Your Vitals</h2>
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
+            <h2 className="text-lg font-medium text-[#0F172A] mb-4" style={{ fontFamily: 'Outfit' }}>Your Vitals</h2>
             {enabledVitals.length === 0 ? (
-              <p className="text-sm text-[#6E6E6A]">No vitals enabled yet</p>
+              <p className="text-sm text-[#64748B]">No vitals enabled yet</p>
             ) : (
               <div className="space-y-2">
                 {enabledVitals.map(vk => {
@@ -152,12 +152,12 @@ export default function Dashboard() {
                   const todayEntry = todayEntries.find(e => e.vital_key === vk);
                   const status = todayEntry ? getVitalStatus(vk, todayEntry.value) : 'none';
                   return (
-                    <div key={vk} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#FAFAF9]">
+                    <div key={vk} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#F8FAFC]">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: todayEntry ? getStatusColor(status) : '#D4D4D0' }} />
-                        <span className="text-sm text-[#2C2C2A]">{vital.name}</span>
+                        <span className="text-sm text-[#0F172A]">{vital.name}</span>
                       </div>
-                      <span className="text-sm font-medium" style={{ color: todayEntry ? getStatusColor(status) : '#6E6E6A' }}>
+                      <span className="text-sm font-medium" style={{ color: todayEntry ? getStatusColor(status) : '#64748B' }}>
                         {todayEntry ? `${todayEntry.value} ${vital.unit}` : '—'}
                       </span>
                     </div>
@@ -174,10 +174,10 @@ export default function Dashboard() {
 
 function StatCard({ label, value, sub }) {
   return (
-    <div className="bg-white border border-[#EAE7E1] rounded-2xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
-      <p className="text-xs text-[#6E6E6A] tracking-wide uppercase">{label}</p>
-      <p className="text-2xl font-semibold text-[#2C2C2A] mt-1" style={{ fontFamily: 'Outfit' }}>{value}</p>
-      <div className="text-xs text-[#6E6E6A] mt-1">{sub}</div>
+    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+      <p className="text-xs text-[#64748B] tracking-wide uppercase">{label}</p>
+      <p className="text-2xl font-semibold text-[#0F172A] mt-1" style={{ fontFamily: 'Outfit' }}>{value}</p>
+      <div className="text-xs text-[#64748B] mt-1">{sub}</div>
     </div>
   );
 }

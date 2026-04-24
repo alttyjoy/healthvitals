@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Figtree:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,29 +6,29 @@
 
 @layer base {
   :root {
-    --background: 40 20% 98%;
-    --foreground: 40 5% 10%;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 40 5% 10%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 40 5% 10%;
-    --primary: 160 28% 26%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 36 14% 90%;
-    --secondary-foreground: 40 5% 10%;
-    --muted: 36 14% 90%;
-    --muted-foreground: 40 5% 43%;
-    --accent: 16 62% 58%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 160 84% 39%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 36 14% 90%;
-    --input: 36 14% 90%;
-    --ring: 160 28% 26%;
-    --chart-1: 160 28% 26%;
-    --chart-2: 16 62% 58%;
-    --chart-3: 88 30% 55%;
-    --chart-4: 43 74% 66%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 199 89% 48%;
+    --chart-1: 199 89% 48%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 43 96% 56%;
+    --chart-4: 271 91% 65%;
     --chart-5: 27 87% 67%;
     --radius: 0.75rem;
   }
@@ -39,28 +39,28 @@
     @apply border-border;
   }
   body {
-    @apply bg-[#FAFAF9] text-[#2C2C2A];
-    font-family: 'Inter', sans-serif;
+    @apply bg-[#F8FAFC] text-[#0F172A];
+    font-family: 'Figtree', sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif;
   }
   /* Dark mode */
   .dark body, html.dark body {
-    background-color: #1A1A1A;
-    color: #E8E8E4;
+    background-color: #0F172A;
+    color: #E2E8F0;
   }
-  html.dark .bg-\[\#FAFAF9\] { background-color: #1A1A1A; }
-  html.dark .bg-white { background-color: #242424; }
-  html.dark .border-\[\#EAE7E1\] { border-color: #333; }
-  html.dark .text-\[\#2C2C2A\] { color: #ffffff; }
-  html.dark .text-\[\#6E6E6A\] { color: #ffffff; }
-  html.dark .bg-\[\#EAE7E1\] { background-color: #333; }
-  html.dark .glass-nav { background: rgba(26,26,26,0.85); }
-  html.dark .tracker-table .sticky-col { background: #242424; }
-  html.dark .tracker-table thead th { background: #1A1A1A; }
-  html.dark .vital-input:hover { background: #333; }
-  html.dark .vital-input:focus { background: #2a2a2a; box-shadow: 0 0 0 2px rgba(45,74,62,0.4); }
+  html.dark .bg-\[\#F8FAFC\] { background-color: #0F172A; }
+  html.dark .bg-white { background-color: #1E293B; }
+  html.dark .border-\[\#E2E8F0\] { border-color: #334155; }
+  html.dark .text-\[\#0F172A\] { color: #F1F5F9; }
+  html.dark .text-\[\#64748B\] { color: #94A3B8; }
+  html.dark .bg-\[\#E2E8F0\] { background-color: #334155; }
+  html.dark .glass-nav { background: rgba(15,23,42,0.85); }
+  html.dark .tracker-table .sticky-col { background: #1E293B; }
+  html.dark .tracker-table thead th { background: #0F172A; }
+  html.dark .vital-input:hover { background: #334155; }
+  html.dark .vital-input:focus { background: #1E293B; box-shadow: 0 0 0 2px rgba(14,165,233,0.4); }
 }
 
 @layer base {
@@ -69,20 +69,27 @@
   }
 }
 
+/* Glass nav */
+.glass-nav {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #FAFAF9;
+  background: #F8FAFC;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D4D4D0;
+  background: #CBD5E1;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ADADA9;
+  background: #94A3B8;
 }
 
 /* Animations */

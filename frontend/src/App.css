@@ -26,7 +26,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #FAFAF9;
+  background: #F8FAFC;
 }
 
 .tracker-table thead th:first-child {
@@ -47,7 +47,7 @@
 }
 
 .vital-input:hover {
-  background: #FAFAF9;
+  background: #F8FAFC;
 }
 
 .vital-input:focus {
@@ -56,9 +56,9 @@
   box-shadow: 0 0 0 2px rgba(45, 74, 62, 0.2);
 }
 
-.vital-input.status-normal { color: #588157; }
+.vital-input.status-normal { color: #10B981; }
 .vital-input.status-warning { color: #ffff00; }
-.vital-input.status-critical { color: #D96C4E; }
+.vital-input.status-critical { color: #EF4444; }
 
 /* Smooth page transitions */
 .page-enter {

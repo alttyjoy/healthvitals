@@ -78,7 +78,7 @@ export default function Billing() {
           ondismiss: () => { setChanging(null); toast.info('Payment cancelled'); }
         },
         prefill: { name: user?.name || '', email: user?.email || '' },
-        theme: { color: '#2D4A3E' },
+        theme: { color: '#0EA5E9' },
       };
 
       const rzp = new window.Razorpay(options);
@@ -141,44 +141,44 @@ export default function Billing() {
     }
   };
 
-  if (loading) return <div className="animate-pulse space-y-4">{[1,2,3].map(i => <div key={i} className="h-48 bg-[#EAE7E1] rounded-2xl" />)}</div>;
+  if (loading) return <div className="animate-pulse space-y-4">{[1,2,3].map(i => <div key={i} className="h-48 bg-[#E2E8F0] rounded-2xl" />)}</div>;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in-up" data-testid="billing-page">
       <div>
-        <h1 className="text-2xl font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{t('subscription_billing')}</h1>
-        <p className="text-sm text-[#6E6E6A]">Manage your subscription plan</p>
+        <h1 className="text-2xl font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{t('subscription_billing')}</h1>
+        <p className="text-sm text-[#64748B]">Manage your subscription plan</p>
       </div>
 
       {/* Current Plan */}
-      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-[#6E6E6A] uppercase tracking-wide">{t('current_plan')}</p>
-            <h2 className="text-xl font-medium text-[#2C2C2A] mt-1" style={{ fontFamily: 'Outfit' }}>
+            <p className="text-xs text-[#64748B] uppercase tracking-wide">{t('current_plan')}</p>
+            <h2 className="text-xl font-medium text-[#0F172A] mt-1" style={{ fontFamily: 'Outfit' }}>
               {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}
             </h2>
-            <p className="text-sm text-[#6E6E6A] mt-1">
+            <p className="text-sm text-[#64748B] mt-1">
               {user?.enabled_vitals?.length || 0} vitals enabled of {plans.find(p => p.key === currentPlan)?.vital_limit || 2} allowed
             </p>
           </div>
-          <Badge className="bg-[#2D4A3E]/10 text-[#2D4A3E] border-0 text-sm px-3 py-1">
+          <Badge className="bg-[#0EA5E9]/10 text-[#0EA5E9] border-0 text-sm px-3 py-1">
             <CreditCard weight="duotone" className="w-4 h-4 mr-1" /> Active
           </Badge>
         </div>
       </div>
 
       {/* Payment Gateway Selector */}
-      <div className="bg-white border border-[#EAE7E1] rounded-2xl p-5 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
-        <p className="text-xs text-[#6E6E6A] uppercase tracking-wide mb-3">Payment Method</p>
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <p className="text-xs text-[#64748B] uppercase tracking-wide mb-3">Payment Method</p>
         <div className="flex gap-3" data-testid="payment-gateway-selector">
           <button
             onClick={() => setPaymentGateway('razorpay')}
             data-testid="gateway-razorpay"
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
               paymentGateway === 'razorpay'
-                ? 'border-[#2D4A3E] bg-[#2D4A3E]/5 text-[#2D4A3E]'
-                : 'border-[#EAE7E1] text-[#6E6E6A] hover:border-[#2D4A3E]/30'
+                ? 'border-[#0EA5E9] bg-[#0EA5E9]/5 text-[#0EA5E9]'
+                : 'border-[#E2E8F0] text-[#64748B] hover:border-[#0EA5E9]/30'
             }`}
           >
             <CreditCard weight="duotone" className="w-5 h-5" />
@@ -189,8 +189,8 @@ export default function Billing() {
             data-testid="gateway-payu"
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
               paymentGateway === 'payu'
-                ? 'border-[#2D4A3E] bg-[#2D4A3E]/5 text-[#2D4A3E]'
-                : 'border-[#EAE7E1] text-[#6E6E6A] hover:border-[#2D4A3E]/30'
+                ? 'border-[#0EA5E9] bg-[#0EA5E9]/5 text-[#0EA5E9]'
+                : 'border-[#E2E8F0] text-[#64748B] hover:border-[#0EA5E9]/30'
             }`}
           >
             <Lightning weight="duotone" className="w-5 h-5" />
@@ -212,43 +212,43 @@ export default function Billing() {
           return (
             <div key={plan.key}
               data-testid={`billing-plan-${plan.key}`}
-              className={`relative bg-white border rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 ${isCurrent ? 'border-[#2D4A3E] ring-2 ring-[#2D4A3E]/10' : isPopular ? 'border-[#2D4A3E]/30' : 'border-[#EAE7E1]'}`}>
+              className={`relative bg-white border rounded-2xl p-6 transition-all duration-300 hover:-translate-y-0.5 ${isCurrent ? 'border-[#0EA5E9] ring-2 ring-[#0EA5E9]/10' : isPopular ? 'border-[#0EA5E9]/30' : 'border-[#E2E8F0]'}`}>
               {isPopular && !isCurrent && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-[#2D4A3E] text-white border-0 rounded-full px-3 py-0.5 text-xs">
+                  <Badge className="bg-[#0EA5E9] text-white border-0 rounded-full px-3 py-0.5 text-xs">
                     <Star weight="fill" className="w-3 h-3 mr-1" /> Popular
                   </Badge>
                 </div>
               )}
               {isCurrent && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-[#588157] text-white border-0 rounded-full px-3 py-0.5 text-xs">Current Plan</Badge>
+                  <Badge className="bg-[#10B981] text-white border-0 rounded-full px-3 py-0.5 text-xs">Current Plan</Badge>
                 </div>
               )}
-              <h3 className="text-lg font-medium text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
+              <h3 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
               <div className="flex items-baseline gap-1 mt-2 mb-1">
-                <span className="text-3xl font-semibold text-[#2C2C2A]" style={{ fontFamily: 'Outfit' }}>
+                <span className="text-3xl font-semibold text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>
                   {plan.price === 0 ? 'Free' : `₹${plan.price}`}
                 </span>
-                {plan.price > 0 && <span className="text-sm text-[#6E6E6A]">/month</span>}
+                {plan.price > 0 && <span className="text-sm text-[#64748B]">/month</span>}
               </div>
               {plan.price_yearly > 0 && (
-                <p className="text-xs text-[#6E6E6A] mb-4">or ₹{plan.price_yearly}/year (save {Math.round((1 - plan.price_yearly / (plan.price * 12)) * 100)}%)</p>
+                <p className="text-xs text-[#64748B] mb-4">or ₹{plan.price_yearly}/year (save {Math.round((1 - plan.price_yearly / (plan.price * 12)) * 100)}%)</p>
               )}
-              <p className="text-sm text-[#6E6E6A] mb-4">Track up to {plan.vital_limit} vitals</p>
+              <p className="text-sm text-[#64748B] mb-4">Track up to {plan.vital_limit} vitals</p>
               <ul className="space-y-2 mb-6">
                 {(plan.features || []).map((f, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-[#2C2C2A]">
-                    <Check weight="bold" className="w-4 h-4 text-[#588157] mt-0.5 flex-shrink-0" /> {f}
+                  <li key={i} className="flex items-start gap-2 text-sm text-[#0F172A]">
+                    <Check weight="bold" className="w-4 h-4 text-[#10B981] mt-0.5 flex-shrink-0" /> {f}
                   </li>
                 ))}
               </ul>
               {isCurrent ? (
-                <Button disabled className="w-full rounded-full bg-[#EAE7E1] text-[#6E6E6A]">{t('current_plan')}</Button>
+                <Button disabled className="w-full rounded-full bg-[#E2E8F0] text-[#64748B]">{t('current_plan')}</Button>
               ) : (
                 <Button onClick={() => handleChangePlan(plan.key)} disabled={!!changing}
                   data-testid={`billing-select-${plan.key}`}
-                  className={`w-full rounded-full transition-all ${isUpgrade ? 'bg-[#2D4A3E] hover:bg-[#1E332A] text-white' : 'bg-[#EAE7E1] hover:bg-[#DEDCD5] text-[#2C2C2A]'}`}>
+                  className={`w-full rounded-full transition-all ${isUpgrade ? 'bg-[#0EA5E9] hover:bg-[#0284C7] text-white' : 'bg-[#E2E8F0] hover:bg-[#DEDCD5] text-[#0F172A]'}`}>
                   {isProcessing ? (
                     <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> Processing...</span>
                   ) : isUpgrade ? (
@@ -264,7 +264,7 @@ export default function Billing() {
       </div>
 
       {/* Gateway Info */}
-      <div className="bg-[#2D4A3E] rounded-2xl p-6 text-center text-white">
+      <div className="bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] rounded-2xl p-6 text-center text-white shadow-[0_8px_30px_rgba(14,165,233,0.2)]">
         <Lightning weight="duotone" className="w-8 h-8 mx-auto mb-3 text-white/80" />
         <h3 className="text-base font-medium mb-1" style={{ fontFamily: 'Outfit' }}>
           Secure Payments via {paymentGateway === 'payu' ? 'PayU' : 'Razorpay'}
