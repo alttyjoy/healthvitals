@@ -23,7 +23,7 @@ export default function Billing() {
 
   useEffect(() => {
     api.get('/plans').then(res => { setPlans(res.data || []); setLoading(false); }).catch(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- runs once on mount
 
   // Handle PayU callback via URL params
   useEffect(() => {

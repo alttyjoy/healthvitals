@@ -308,25 +308,30 @@ async def startup():
         logger.info(f"Admin user created: {admin_email}")
     elif not verify_password(admin_password, existing["password_hash"]):
         await db.users.update_one({"email": admin_email}, {"$set": {"password_hash": hash_password(admin_password)}})
-    # Seed second admin
-    admin2_email = "mohanv44@gmail.com"
-    admin2_password = "India@1947"
-    existing2 = await db.users.find_one({"email": admin2_email})
-    if not existing2:
-        await db.users.insert_one({
-            "email": admin2_email, "password_hash": hash_password(admin2_password),
-            "name": "Mohan V", "role": "super_admin", "plan": "premium",
-            "enabled_vitals": VITAL_KEYS, "settings": {"language": "en"},
-            "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
-        })
-        logger.info(f"Admin user created: {admin2_email}")
-    elif not verify_password(admin2_password, existing2["password_hash"]):
-        await db.users.update_one({"email": admin2_email}, {"$set": {"password_hash": hash_password(admin2_password)}})
+    # Seed second admin from environment
+    admin2_email = os.environ.get("ADMIN2_EMAIL", "")
+    admin2_password = os.environ.get("ADMIN2_PASSWORD", "")
+    if admin2_email and admin2_password:
+        existing2 = await db.users.find_one({"email": admin2_email})
+        if not existing2:
+            await db.users.insert_one({
+                "email": admin2_email, "password_hash": hash_password(admin2_password),
+                "name": admin2_email.split("@")[0], "role": "super_admin", "plan": "premium",
+                "enabled_vitals": VITAL_KEYS, "settings": {"language": "en"},
+                "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc)
+            })
+            logger.info(f"Admin user created: {admin2_email}")
+        elif not verify_password(admin2_password, existing2["password_hash"]):
+            await db.users.update_one({"email": admin2_email}, {"$set": {"password_hash": hash_password(admin2_password)}})
     # Write test credentials
     creds_dir = Path("/app/memory")
     creds_dir.mkdir(exist_ok=True)
     with open(creds_dir / "test_credentials.md", "w") as f:
-        f.write(f"# Test Credentials\n\n## Admin 1\n- Email: {admin_email}\n- Password: {admin_password}\n- Role: super_admin\n\n## Admin 2\n- Email: mohanv44@gmail.com\n- Password: India@1947\n- Role: super_admin\n\n## Test User\n- Register at /register with any email\n\n## Endpoints\n- Login: POST /api/auth/login\n- Register: POST /api/auth/register\n- Me: GET /api/auth/me\n")
+        creds = f"# Test Credentials\n\n## Admin 1\n- Email: {admin_email}\n- Password: {admin_password}\n- Role: super_admin\n"
+        if admin2_email:
+            creds += f"\n## Admin 2\n- Email: {admin2_email}\n- Password: {admin2_password}\n- Role: super_admin\n"
+        creds += "\n## Test User\n- Register at /register with any email\n\n## Endpoints\n- Login: POST /api/auth/login\n- Register: POST /api/auth/register\n- Me: GET /api/auth/me\n"
+        f.write(creds)
     logger.info("VitalTrack API started successfully")
     # Start scheduler
     if not scheduler.running:

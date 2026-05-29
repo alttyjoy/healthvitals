@@ -37,12 +37,15 @@ export default function DailyTracker() {
   const dates = getDatesInRange(startDate, daysToShow);
   const today = new Date().toISOString().split('T')[0];
 
+  const dateStart = dates[0];
+  const dateEnd = dates[dates.length - 1];
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [vitalsRes, entriesRes] = await Promise.all([
         api.get('/vitals/enabled'),
-        api.get(`/entries?start_date=${dates[0]}&end_date=${dates[dates.length - 1]}`)
+        api.get(`/entries?start_date=${dateStart}&end_date=${dateEnd}`)
       ]);
       setEnabledVitals(vitalsRes.data.enabled_vitals || []);
       const entryMap = {};
@@ -57,11 +60,11 @@ export default function DailyTracker() {
         if (e.value2 != null) lv[`${e.vital_key}_${e.date}_v2`] = String(e.value2);
       });
       setLocalValues(lv);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('Failed to load tracker data:', e); }
     finally { setLoading(false); }
-  }, [dates[0], dates[dates.length - 1]]);
+  }, [dateStart, dateEnd]);
 
-  useEffect(() => { loadData(); }, [dateOffset]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleValueChange = (vitalKey, date, value, isV2 = false) => {
     const key = isV2 ? `${vitalKey}_${date}_v2` : `${vitalKey}_${date}`;

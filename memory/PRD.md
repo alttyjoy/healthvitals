@@ -4,7 +4,7 @@
 SaaS platform for daily tracking, monitoring, visualizing, exporting, and managing 12 health vitals with freemium subscription model.
 
 ## Architecture
-- **Frontend**: React + Tailwind CSS + Recharts + Shadcn/UI + Phosphor Icons
+- **Frontend**: React + Tailwind CSS + Recharts + Shadcn/UI + Phosphor Icons + DOMPurify
 - **Backend**: FastAPI (Python) + MongoDB + APScheduler
 - **Auth**: JWT with httpOnly cookies, role-based access
 - **Payments**: Razorpay, PayU.In (live integration with test keys)
@@ -12,23 +12,18 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 
 ## What's Been Implemented
 
-### Phase 1-4 (April 10-17, 2026)
+### Phase 1-5 (April 10-24, 2026)
 - Full MVP, Auth, Dashboard, Tracker, Charts, Export, Plans, Admin
-- Razorpay, PayU.In, Dark mode, Multilingual, Shared reports
-- Content Pages, Referral System, Admin SMTP/Reminder config
-- Forgot Password, 8 FAQs, Responsive Landing, Admin User CRUD
+- Razorpay, PayU.In, Dark mode, Multilingual, Shared reports, Referral System
+- Content Pages, Admin SMTP/Reminder config, Forgot Password, 8 FAQs
+- Responsive Landing, Admin User CRUD, Coupon System, Color Refresh
 
-### Phase 6 (April 24, 2026)
-- **Color Scheme Refresh**: Complete rebrand from muddy olive/earthy tones to modern Sky Blue + Emerald palette
-  - Primary: #0EA5E9 (Sky Blue), Hover: #0284C7
-  - Accent: #10B981 (Emerald Green)
-  - Background: #F8FAFC, Cards: White, Borders: #E2E8F0
-  - Text: #0F172A (primary), #64748B (secondary)
-  - Danger: #EF4444
-  - CTA sections use gradient (from-sky-500 to-sky-600) with blue glow shadows
-  - Glassmorphism nav header (backdrop-blur-xl)
-  - Body font changed from Inter to Figtree
-  - Updated 19 source files (all pages + components + CSS)
+### Phase 7 — Code Quality Fixes (May 29, 2026)
+- **XSS Fix**: ContentPage.js now uses DOMPurify to sanitize HTML before rendering
+- **Hardcoded Secrets**: Moved admin2 credentials to .env (ADMIN2_EMAIL, ADMIN2_PASSWORD), all test files use os.environ.get()
+- **React Hook Dependencies**: Fixed stale closures in Billing, AdminPanel, DailyTracker, Settings with proper dependency arrays
+- **Empty Error Handlers**: Added console.error logging to all previously empty catch blocks in AuthContext, Settings
+- **Array Index Keys**: Replaced index-based React keys with stable identifiers (title, question text, vital_key) in Landing, Dashboard, Billing, AdminPanel
 
 ## Pricing (INR)
 - Free: ₹0 (2 vitals, 7-day history, CSV only)
@@ -48,3 +43,6 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 - [ ] Mobile app API hardening
 - [ ] AI-powered health insights
 - [ ] Device sync readiness
+- [ ] Break down AdminPanel.js (787 lines) into sub-components
+- [ ] Break down Settings.js (403 lines) into sub-components
+- [ ] Break down server.py get_insights/generate_export into helpers

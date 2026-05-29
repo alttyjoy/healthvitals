@@ -9,13 +9,12 @@ import time
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://wellness-log-105.preview.emergentagent.com').rstrip('/')
 
-# Test credentials
-ADMIN1_EMAIL = "admin@example.com"
-ADMIN1_PASSWORD = "admin123"
-ADMIN2_EMAIL = "mohanv44@gmail.com"
-ADMIN2_PASSWORD = "India@1947"
-ADMIN3_EMAIL = "alttyjoy@gmail.com"
-ADMIN2_PASSWORD = "India@1947"
+# Test credentials from environment
+ADMIN1_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@example.com")
+ADMIN1_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+ADMIN2_EMAIL = os.environ.get("ADMIN2_EMAIL", "mohanv44@gmail.com")
+ADMIN2_PASSWORD = os.environ.get("ADMIN2_PASSWORD", "India@1947")
+ADMIN3_EMAIL = os.environ.get("ADMIN3_EMAIL", "alttyjoy@gmail.com")
 
 
 class TestAdminUserCRUD:

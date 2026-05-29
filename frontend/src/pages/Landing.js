@@ -125,8 +125,8 @@ export default function Landing() {
             </div>
           </div>
           <div className="mt-10 sm:mt-16 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 animate-fade-in-up stagger-2">
-            {[{ n: '12', l: 'Health Vitals' }, { n: '3', l: 'Flexible Plans' }, { n: '24/7', l: 'Access Anywhere' }, { n: '100%', l: 'Data Privacy' }].map((s, i) => (
-              <div key={i} className="bg-white border border-[#E2E8F0] rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            {[{ n: '12', l: 'Health Vitals' }, { n: '3', l: 'Flexible Plans' }, { n: '24/7', l: 'Access Anywhere' }, { n: '100%', l: 'Data Privacy' }].map((s) => (
+              <div key={s.n} className="bg-white border border-[#E2E8F0] rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
                 <div className="text-2xl sm:text-3xl font-semibold text-[#0EA5E9] mb-1" style={{ fontFamily: 'Outfit' }}>{s.n}</div>
                 <div className="text-xs sm:text-sm text-[#64748B]">{s.l}</div>
               </div>
@@ -145,8 +145,8 @@ export default function Landing() {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-            {features.map((f, i) => (
-              <div key={i} className={`bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl sm:rounded-2xl p-6 sm:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up stagger-${i % 3 + 1}`}>
+            {features.map((f) => (
+              <div key={f.title} className={`bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl sm:rounded-2xl p-6 sm:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg animate-fade-in-up`}>
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-[#0EA5E9]/10 flex items-center justify-center mb-4 sm:mb-5">
                   <f.icon weight="duotone" className="w-5 h-5 sm:w-6 sm:h-6 text-[#0EA5E9]" />
                 </div>
@@ -229,7 +229,7 @@ export default function Landing() {
           </div>
           <div className="space-y-3">
             {faqs.map((faq, i) => (
-              <div key={i} className="border border-[#E2E8F0] rounded-xl overflow-hidden">
+              <div key={faq.q} className="border border-[#E2E8F0] rounded-xl overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   data-testid={`faq-${i}`}

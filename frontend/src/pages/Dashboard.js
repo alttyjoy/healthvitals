@@ -102,7 +102,7 @@ export default function Dashboard() {
                 const Icon = insightIcons[ins.type] || Info;
                 const colors = { warning: 'text-amber-600 bg-amber-50', success: 'text-green-600 bg-green-50', info: 'text-blue-600 bg-blue-50' };
                 return (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors">
+                  <div key={`${ins.vital_key}-${ins.type}-${ins.message.slice(0,20)}`} className="flex items-start gap-3 p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${colors[ins.type] || colors.info}`}>
                       <Icon weight="duotone" className="w-4 h-4" />
                     </div>

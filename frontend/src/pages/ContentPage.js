@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '@/lib/api';
+import DOMPurify from 'dompurify';
 import { Heartbeat, ArrowLeft } from '@phosphor-icons/react';
 
 export default function ContentPage() {
@@ -9,6 +10,7 @@ export default function ContentPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     api.get(`/content/${pageKey}`).then(res => setPage(res.data)).catch(() => setPage(null)).finally(() => setLoading(false));
   }, [pageKey]);
 
@@ -24,9 +26,9 @@ export default function ContentPage() {
     </div>
   );
 
-  // Simple markdown-to-HTML renderer
+  // Simple markdown-to-HTML renderer with sanitization
   const renderContent = (md) => {
-    return md
+    const raw = md
       .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium text-[#0F172A] mt-6 mb-2" style="font-family:Outfit">$1</h3>')
       .replace(/^## (.*$)/gim, '<h2 class="text-xl font-medium text-[#0F172A] mt-8 mb-3" style="font-family:Outfit">$1</h2>')
       .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-medium text-[#0F172A] mb-4" style="font-family:Outfit">$1</h1>')
@@ -35,6 +37,7 @@ export default function ContentPage() {
       .replace(/^\d+\. (.*$)/gim, '<li class="text-sm text-[#64748B] ml-4 mb-1 list-decimal">$1</li>')
       .replace(/\n\n/g, '<br/><br/>')
       .replace(/\n/g, '<br/>');
+    return DOMPurify.sanitize(raw, { ADD_ATTR: ['style', 'class'] });
   };
 
   return (

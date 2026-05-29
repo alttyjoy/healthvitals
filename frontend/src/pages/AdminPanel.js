@@ -240,9 +240,13 @@ export default function AdminPanel() {
     } catch (err) { toast.error(formatApiError(err)); }
   };
 
-  useEffect(() => { if (tab === 'analytics' && !analytics) loadAnalytics(); }, [tab]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- lazy-load tabs once
+  useEffect(() => { if (tab === 'analytics' && !analytics) loadAnalytics(); }, [tab, analytics]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'settings' && !smtpLoaded) { loadSmtp(); loadReminderSettings(); } }, [tab, smtpLoaded]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'content' && !contentLoaded) loadContentPages(); }, [tab, contentLoaded]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'coupons' && !couponsLoaded) loadCoupons(); }, [tab, couponsLoaded]);
 
   if (loading) return (

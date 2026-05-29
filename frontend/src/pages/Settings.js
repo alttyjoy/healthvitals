@@ -48,17 +48,17 @@ export default function Settings() {
     api.get('/vitals/enabled').then(res => {
       setEnabledVitals(res.data.enabled_vitals || []);
       setVitalLimit(res.data.vital_limit || 2);
-    }).catch(() => {});
+    }).catch(err => console.error('Failed to load vitals:', err?.message));
     loadSharedReports();
     loadReferral();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- runs once on mount
 
   const loadReferral = async () => {
     try {
       const { data } = await api.get('/referral');
       setReferralCode(data.referral_code || '');
       setReferralStats({ total_referrals: data.total_referrals || 0, successful_referrals: data.successful_referrals || 0 });
-    } catch { /* ignore */ }
+    } catch (err) { console.error('Failed to load:', err?.message); }
   };
 
   const handleApplyReferral = async () => {
@@ -83,7 +83,7 @@ export default function Settings() {
     try {
       const { data } = await api.get('/shared-reports');
       setSharedReports(data || []);
-    } catch { /* ignore */ }
+    } catch (err) { console.error('Failed to load:', err?.message); }
   };
 
   const handleSaveProfile = async () => {

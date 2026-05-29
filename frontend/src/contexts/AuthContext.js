@@ -11,7 +11,8 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await api.get('/auth/me');
       setUser(data);
-    } catch {
+    } catch (err) {
+      console.error('Auth check failed:', err?.message);
       setUser(null);
     } finally {
       setLoading(false);
@@ -41,7 +42,7 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await api.get('/auth/me');
       setUser(data);
-    } catch { /* ignore */ }
+    } catch (err) { console.error('Refresh user failed:', err?.message); }
   };
 
   return (

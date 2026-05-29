@@ -12,28 +12,31 @@ import requests
 import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+ADMIN1_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@example.com")
+ADMIN1_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+ADMIN2_EMAIL = os.environ.get("ADMIN2_EMAIL", "mohanv44@gmail.com")
+ADMIN2_PASSWORD = os.environ.get("ADMIN2_PASSWORD", "India@1947")
 
 class TestAdminLogin:
     """Test admin login with both admin accounts"""
     
     def test_admin1_login(self):
-        """Admin 1: admin@example.com / admin123"""
+        """Admin 1"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "admin@example.com",
-            "password": "admin123"
+            "email": ADMIN1_EMAIL,
+            "password": ADMIN1_PASSWORD
         })
         assert response.status_code == 200, f"Admin1 login failed: {response.text}"
         data = response.json()
-        # API returns user data directly (not wrapped in "user" key)
-        assert data.get("email") == "admin@example.com"
+        assert data.get("email") == ADMIN1_EMAIL
         assert data.get("role") == "super_admin"
         print("SUCCESS: Admin 1 login works")
     
     def test_admin2_login(self):
-        """Admin 2: mohanv44@gmail.com / India@1947"""
+        """Admin 2"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "mohanv44@gmail.com",
-            "password": "India@1947"
+            "email": ADMIN2_EMAIL,
+            "password": ADMIN2_PASSWORD
         })
         assert response.status_code == 200, f"Admin2 login failed: {response.text}"
         data = response.json()

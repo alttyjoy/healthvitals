@@ -8,11 +8,11 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
-# Test credentials
-ADMIN_EMAIL = "admin@example.com"
-ADMIN_PASSWORD = "admin123"
+# Test credentials from environment
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@example.com")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 TEST_USER_EMAIL = f"testuser_{os.urandom(4).hex()}@example.com"
-TEST_USER_PASSWORD = "TestPass123!"
+TEST_USER_PASSWORD = os.environ.get("TEST_PASSWORD", "TestPass123!")
 
 
 class TestContentPages:
