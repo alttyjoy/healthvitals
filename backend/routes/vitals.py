@@ -93,8 +93,14 @@ async def delete_entry(date: str, vital_key: str, request: Request):
         raise HTTPException(status_code=404, detail="Entry not found")
     return {"message": "Entry deleted"}
 
+def _compute_stats(vals):
+    """Compute min, max, avg, count from a list of numeric values."""
+    if not vals:
+        return {"min": None, "max": None, "avg": None, "count": 0}
+    return {"min": round(min(vals), 1), "max": round(max(vals), 1), "avg": round(sum(vals) / len(vals), 1), "count": len(vals)}
+
 @router.get("/charts/{vital_key}")
-async def get_chart_data(vital_key: str, request: Request, start_date: str = Query(...), end_date: str = Query(...)):
+async def get_chart_data(vital_key: str, request: Request, start_date: str = Query(...), end_date: str = Query(...), compare: bool = False):
     user = await get_current_user(request)
     uid = str(user["_id"])
     plan = get_user_plan(user)
@@ -106,7 +112,41 @@ async def get_chart_data(vital_key: str, request: Request, start_date: str = Que
         {"user_id": uid, "vital_key": vital_key, "date": {"$gte": start_date, "$lte": end_date}},
         {"_id": 0}
     ).sort("date", 1).to_list(1000)
-    return {"entries": entries, "vital_key": vital_key}
+    vals = [e["value"] for e in entries if e.get("value") is not None]
+    stats = _compute_stats(vals)
+    # Compute previous period for comparison
+    from datetime import date as date_type
+    sd = date_type.fromisoformat(start_date)
+    ed = date_type.fromisoformat(end_date)
+    period_days = (ed - sd).days
+    prev_end = (sd - timedelta(days=1)).isoformat()
+    prev_start = (sd - timedelta(days=period_days + 1)).isoformat()
+    prev_entries = await db.daily_entries.find(
+        {"user_id": uid, "vital_key": vital_key, "date": {"$gte": prev_start, "$lte": prev_end}},
+        {"_id": 0}
+    ).sort("date", 1).to_list(1000)
+    prev_vals = [e["value"] for e in prev_entries if e.get("value") is not None]
+    prev_stats = _compute_stats(prev_vals)
+    # Compute change percent
+    change_percent = None
+    if prev_stats["avg"] and stats["avg"] and prev_stats["avg"] != 0:
+        change_percent = round(((stats["avg"] - prev_stats["avg"]) / prev_stats["avg"]) * 100, 1)
+    # Trend
+    trend = "stable"
+    if len(vals) >= 3:
+        recent = vals[-3:]
+        if recent[-1] > recent[0] * 1.05:
+            trend = "rising"
+        elif recent[-1] < recent[0] * 0.95:
+            trend = "falling"
+    result = {
+        "entries": entries, "vital_key": vital_key,
+        "stats": stats, "previous_stats": prev_stats,
+        "change_percent": change_percent, "trend": trend,
+    }
+    if compare:
+        result["previous_entries"] = prev_entries
+    return result
 
 @router.get("/insights")
 async def get_insights(request: Request):
@@ -116,6 +156,7 @@ async def get_insights(request: Request):
     insights = []
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
+    two_weeks_ago = (datetime.now(timezone.utc) - timedelta(days=14)).strftime("%Y-%m-%d")
     for vk in enabled:
         vtype = next((v for v in VITAL_TYPES if v["key"] == vk), None)
         if not vtype:
@@ -129,6 +170,16 @@ async def get_insights(request: Request):
             continue
         avg = sum(vals) / len(vals)
         latest = vals[-1]
+        # Previous week for comparison
+        prev_entries = await db.daily_entries.find(
+            {"user_id": uid, "vital_key": vk, "date": {"$gte": two_weeks_ago, "$lt": week_ago}},
+            {"_id": 0}
+        ).to_list(100)
+        prev_vals = [e["value"] for e in prev_entries if e.get("value") is not None]
+        prev_avg = round(sum(prev_vals) / len(prev_vals), 1) if prev_vals else None
+        change_percent = None
+        if prev_avg and prev_avg != 0:
+            change_percent = round(((avg - prev_avg) / prev_avg) * 100, 1)
         status = "normal"
         if latest < vtype.get("normal_min", 0):
             status = "warning" if latest > vtype.get("normal_min", 0) * 0.8 else "critical"
@@ -147,8 +198,10 @@ async def get_insights(request: Request):
         insights.append({
             "vital_key": vk, "vital_name": vtype["name"], "status": status,
             "trend": trend, "latest": latest, "average": round(avg, 1),
+            "previous_average": prev_avg, "change_percent": change_percent,
             "entry_count": len(vals), "message": message, "unit": vtype["unit"],
             "normal_min": vtype.get("normal_min"), "normal_max": vtype.get("normal_max"),
+            "min": round(min(vals), 1), "max": round(max(vals), 1),
         })
     return insights
 

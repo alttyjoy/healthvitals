@@ -6,8 +6,34 @@ import { VITAL_TYPES, VITAL_MAP, getVitalStatus, getStatusColor } from '@/lib/vi
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  ChartLine, Table, ArrowRight, Warning, CheckCircle, Info, Plus, Lightning
+  ChartLine, Table, ArrowRight, Warning, CheckCircle, Info, Plus, Lightning,
+  TrendUp, TrendDown, Minus, ArrowUp, ArrowDown
 } from '@phosphor-icons/react';
+
+function TrendArrow({ trend, changePercent }) {
+  if (!trend || trend === 'stable') {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-[#64748B] bg-[#F1F5F9] rounded-full px-1.5 py-0.5">
+        <Minus weight="bold" className="w-2.5 h-2.5" /> Stable
+      </span>
+    );
+  }
+  const isUp = trend === 'rising';
+  const color = isUp ? '#EF4444' : '#10B981';
+  const bg = isUp ? 'bg-red-50' : 'bg-emerald-50';
+  const Icon = isUp ? ArrowUp : ArrowDown;
+  return (
+    <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold rounded-full px-1.5 py-0.5 ${bg}`} style={{ color }}>
+      <Icon weight="bold" className="w-2.5 h-2.5" />
+      {changePercent != null ? `${Math.abs(changePercent)}%` : (isUp ? 'Up' : 'Down')}
+    </span>
+  );
+}
+
+function StatusDot({ status }) {
+  const colors = { normal: '#10B981', warning: '#F59E0B', critical: '#EF4444' };
+  return <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: colors[status] || '#94A3B8' }} />;
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -16,20 +42,18 @@ export default function Dashboard() {
   const [enabledVitals, setEnabledVitals] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+  useEffect(() => { loadDashboard(); }, []);
 
   const loadDashboard = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
       const [insightsRes, entriesRes, vitalsRes] = await Promise.all([
-        api.get('/insights').catch(() => ({ data: { insights: [] } })),
+        api.get('/insights').catch(() => ({ data: [] })),
         api.get(`/entries?start_date=${weekAgo}&end_date=${today}`).catch(() => ({ data: [] })),
         api.get('/vitals/enabled').catch(() => ({ data: { enabled_vitals: [] } })),
       ]);
-      setInsights(insightsRes.data.insights || []);
+      setInsights(Array.isArray(insightsRes.data) ? insightsRes.data : []);
       setRecentEntries(entriesRes.data || []);
       setEnabledVitals(vitalsRes.data.enabled_vitals || []);
     } catch (e) { console.error(e); }
@@ -37,7 +61,6 @@ export default function Dashboard() {
   };
 
   const todayEntries = recentEntries.filter(e => e.date === new Date().toISOString().split('T')[0]);
-  const insightIcons = { warning: Warning, success: CheckCircle, info: Info };
 
   if (loading) return (
     <div className="space-y-6 animate-pulse">
@@ -47,7 +70,6 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in-up" data-testid="user-dashboard">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>
           Welcome back, {user?.name?.split(' ')[0]}
@@ -59,7 +81,7 @@ export default function Dashboard() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Active Vitals" value={enabledVitals.length} sub={`of ${VITAL_MAP[Object.keys(VITAL_MAP)[0]] ? VITAL_TYPES.length : 12} available`} />
+        <StatCard label="Active Vitals" value={enabledVitals.length} sub={`of ${VITAL_TYPES.length} available`} />
         <StatCard label="Today's Entries" value={todayEntries.length} sub={`of ${enabledVitals.length} expected`} />
         <StatCard label="This Week" value={recentEntries.length} sub="total entries" />
         <StatCard label="Plan" value={user?.plan?.charAt(0).toUpperCase() + user?.plan?.slice(1)} sub={
@@ -88,7 +110,7 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Insights */}
+        {/* Health Insights with Trends */}
         <div className="lg:col-span-2 bg-white border border-[#E2E8F0] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Health Insights</h2>
@@ -97,27 +119,47 @@ export default function Dashboard() {
           {insights.length === 0 ? (
             <p className="text-sm text-[#64748B] py-8 text-center">Start tracking to see insights</p>
           ) : (
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {insights.map((ins, i) => {
-                const Icon = insightIcons[ins.type] || Info;
-                const colors = { warning: 'text-amber-600 bg-amber-50', success: 'text-green-600 bg-green-50', info: 'text-blue-600 bg-blue-50' };
-                return (
-                  <div key={`${ins.vital_key}-${ins.type}-${ins.message.slice(0,20)}`} className="flex items-start gap-3 p-3 rounded-lg hover:bg-[#F8FAFC] transition-colors">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${colors[ins.type] || colors.info}`}>
-                      <Icon weight="duotone" className="w-4 h-4" />
+            <div className="space-y-1" data-testid="insights-list">
+              {insights.map(ins => (
+                <div key={ins.vital_key} className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#F8FAFC] transition-colors group" data-testid={`insight-${ins.vital_key}`}>
+                  <StatusDot status={ins.status} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-[#0F172A]">{ins.vital_name}</span>
+                      <TrendArrow trend={ins.trend} changePercent={ins.change_percent} />
                     </div>
-                    <div>
-                      <p className="text-sm text-[#0F172A]">{ins.message}</p>
-                      <p className="text-xs text-[#64748B] mt-0.5">{VITAL_MAP[ins.vital_key]?.name}</p>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="text-xs text-[#64748B]">
+                        Latest: <span className="font-medium text-[#0F172A]">{ins.latest}</span> {ins.unit}
+                      </span>
+                      <span className="text-xs text-[#94A3B8]">|</span>
+                      <span className="text-xs text-[#64748B]">
+                        Avg: <span className="font-medium text-[#0F172A]">{ins.average}</span>
+                      </span>
+                      {ins.previous_average != null && (
+                        <>
+                          <span className="text-xs text-[#94A3B8]">|</span>
+                          <span className="text-xs text-[#94A3B8]">
+                            Prev: {ins.previous_average}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
-                );
-              })}
+                  <div className="text-right hidden sm:block">
+                    <div className="text-xs text-[#64748B]">{ins.min} — {ins.max}</div>
+                    <div className="text-[10px] text-[#94A3B8]">{ins.entry_count} readings</div>
+                  </div>
+                  <Link to={`/charts/${ins.vital_key}`} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ArrowRight className="w-4 h-4 text-[#94A3B8]" />
+                  </Link>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Quick Actions */}
+        {/* Sidebar */}
         <div className="space-y-4">
           <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
             <h2 className="text-lg font-medium text-[#0F172A] mb-4" style={{ fontFamily: 'Outfit' }}>Quick Actions</h2>
@@ -139,28 +181,33 @@ export default function Dashboard() {
               </Link>
             </div>
           </div>
-          {/* Enabled Vitals */}
+          {/* Enabled Vitals with Trend Arrows */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6">
             <h2 className="text-lg font-medium text-[#0F172A] mb-4" style={{ fontFamily: 'Outfit' }}>Your Vitals</h2>
             {enabledVitals.length === 0 ? (
               <p className="text-sm text-[#64748B]">No vitals enabled yet</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {enabledVitals.map(vk => {
                   const vital = VITAL_MAP[vk];
                   if (!vital) return null;
                   const todayEntry = todayEntries.find(e => e.vital_key === vk);
                   const status = todayEntry ? getVitalStatus(vk, todayEntry.value) : 'none';
+                  const insight = insights.find(i => i.vital_key === vk);
                   return (
-                    <div key={vk} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[#F8FAFC]">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: todayEntry ? getStatusColor(status) : '#D4D4D0' }} />
-                        <span className="text-sm text-[#0F172A]">{vital.name}</span>
+                    <Link to={`/charts/${vk}`} key={vk} className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-[#F8FAFC] transition-colors group" data-testid={`vital-card-${vk}`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: todayEntry ? getStatusColor(status) : '#D4D4D0' }} />
+                        <span className="text-sm text-[#0F172A] truncate">{vital.name}</span>
                       </div>
-                      <span className="text-sm font-medium" style={{ color: todayEntry ? getStatusColor(status) : '#64748B' }}>
-                        {todayEntry ? `${todayEntry.value} ${vital.unit}` : '—'}
-                      </span>
-                    </div>
+                      <div className="flex items-center gap-2">
+                        {insight && <TrendArrow trend={insight.trend} changePercent={insight.change_percent} />}
+                        <span className="text-sm font-medium tabular-nums" style={{ color: todayEntry ? getStatusColor(status) : '#64748B' }}>
+                          {todayEntry ? `${todayEntry.value}` : '—'}
+                        </span>
+                        <span className="text-[10px] text-[#94A3B8]">{vital.unit}</span>
+                      </div>
+                    </Link>
                   );
                 })}
               </div>

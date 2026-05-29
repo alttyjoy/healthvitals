@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '@/lib/api';
-import { VITAL_TYPES, VITAL_MAP } from '@/lib/vitals';
+import { VITAL_MAP } from '@/lib/vitals';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend
 } from 'recharts';
-import { ChartLine, TrendUp, TrendDown, Minus } from '@phosphor-icons/react';
+import { ChartLine, TrendUp, TrendDown, Minus, ArrowUp, ArrowDown } from '@phosphor-icons/react';
 
 const CHART_COLORS = ['#0EA5E9', '#EF4444', '#8CB369', '#E9C46A', '#F4A261', '#A3B18A'];
 
@@ -20,6 +22,28 @@ const DATE_RANGES = [
   { label: '90 Days', days: 90 },
 ];
 
+function TrendIndicator({ trend, changePercent }) {
+  if (!trend || trend === 'stable') {
+    return (
+      <div className="flex items-center gap-1 text-[#64748B]">
+        <Minus weight="bold" className="w-4 h-4" />
+        <span className="text-xs font-medium">Stable</span>
+      </div>
+    );
+  }
+  const isUp = trend === 'rising';
+  const color = isUp ? '#EF4444' : '#10B981';
+  const Icon = isUp ? ArrowUp : ArrowDown;
+  return (
+    <div className="flex items-center gap-1" style={{ color }}>
+      <Icon weight="bold" className="w-4 h-4" />
+      <span className="text-xs font-semibold">
+        {changePercent != null ? `${Math.abs(changePercent)}%` : (isUp ? 'Rising' : 'Falling')}
+      </span>
+    </div>
+  );
+}
+
 export default function Charts() {
   const { vitalKey: paramKey } = useParams();
   const [selectedVital, setSelectedVital] = useState(paramKey || '');
@@ -27,6 +51,7 @@ export default function Charts() {
   const [chartData, setChartData] = useState(null);
   const [dateRange, setDateRange] = useState(30);
   const [loading, setLoading] = useState(true);
+  const [showCompare, setShowCompare] = useState(false);
 
   useEffect(() => {
     api.get('/vitals/enabled').then(res => {
@@ -35,21 +60,24 @@ export default function Charts() {
       if (!selectedVital && ev.length > 0) setSelectedVital(ev[0]);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!selectedVital) return;
     const end = new Date().toISOString().split('T')[0];
     const start = new Date(Date.now() - dateRange * 86400000).toISOString().split('T')[0];
     setLoading(true);
-    api.get(`/charts/${selectedVital}?start_date=${start}&end_date=${end}`)
+    api.get(`/charts/${selectedVital}?start_date=${start}&end_date=${end}&compare=${showCompare}`)
       .then(res => setChartData(res.data))
       .catch(() => setChartData(null))
       .finally(() => setLoading(false));
-  }, [selectedVital, dateRange]);
+  }, [selectedVital, dateRange, showCompare]);
 
   const vital = VITAL_MAP[selectedVital];
   const stats = chartData?.stats || {};
+  const prevStats = chartData?.previous_stats || {};
+  const changePercent = chartData?.change_percent;
+  const trend = chartData?.trend;
 
   const renderChart = () => {
     if (!chartData || !chartData.entries?.length) {
@@ -60,11 +88,27 @@ export default function Charts() {
         </div>
       );
     }
-    const data = chartData.entries.map(e => ({
+    // Merge current and previous period data for comparison
+    const currentEntries = chartData.entries.map(e => ({
       date: new Date(e.date + 'T00:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric' }),
+      rawDate: e.date,
       value: e.value,
       value2: e.value2,
     }));
+
+    let data = currentEntries;
+    if (showCompare && chartData.previous_entries?.length > 0) {
+      // Align previous entries by index (day offset) for overlay
+      const prevMap = {};
+      chartData.previous_entries.forEach((e, i) => {
+        prevMap[i] = e.value;
+      });
+      data = currentEntries.map((entry, i) => ({
+        ...entry,
+        prev: prevMap[i] ?? null,
+      }));
+    }
+
     const normalMin = vital?.normalMin;
     const normalMax = vital?.normalMax;
     const chartType = vital?.chartType || 'line';
@@ -80,9 +124,11 @@ export default function Charts() {
             <XAxis dataKey="date" fontSize={11} tick={{ fill: '#64748B' }} />
             <YAxis fontSize={11} tick={{ fill: '#64748B' }} />
             <Tooltip contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #E2E8F0', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }} />
+            <Legend />
             {normalMin != null && <ReferenceLine y={normalMin} stroke="#10B981" strokeDasharray="4 4" label={{ value: 'Min', fill: '#10B981', fontSize: 10 }} />}
             {normalMax != null && <ReferenceLine y={normalMax} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Max', fill: '#EF4444', fontSize: 10 }} />}
-            <Bar dataKey="value" fill={vital?.color || CHART_COLORS[0]} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="value" name="Current" fill={vital?.color || CHART_COLORS[0]} radius={[4, 4, 0, 0]} />
+            {showCompare && <Bar dataKey="prev" name="Previous" fill="#CBD5E1" radius={[4, 4, 0, 0]} opacity={0.5} />}
           </BarChart>
         </ResponsiveContainer>
       );
@@ -95,8 +141,10 @@ export default function Charts() {
             <XAxis dataKey="date" fontSize={11} tick={{ fill: '#64748B' }} />
             <YAxis fontSize={11} tick={{ fill: '#64748B' }} />
             <Tooltip contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #E2E8F0', borderRadius: 12 }} />
+            <Legend />
             {normalMin != null && <ReferenceLine y={normalMin} stroke="#10B981" strokeDasharray="4 4" />}
-            <Area type="monotone" dataKey="value" stroke={vital?.color || CHART_COLORS[0]} fill={`${vital?.color || CHART_COLORS[0]}20`} strokeWidth={2} />
+            <Area type="monotone" dataKey="value" name="Current" stroke={vital?.color || CHART_COLORS[0]} fill={`${vital?.color || CHART_COLORS[0]}20`} strokeWidth={2} />
+            {showCompare && <Area type="monotone" dataKey="prev" name="Previous" stroke="#94A3B8" fill="#94A3B810" strokeWidth={1.5} strokeDasharray="4 4" />}
           </AreaChart>
         </ResponsiveContainer>
       );
@@ -124,9 +172,11 @@ export default function Charts() {
           <XAxis dataKey="date" fontSize={11} tick={{ fill: '#64748B' }} />
           <YAxis fontSize={11} tick={{ fill: '#64748B' }} />
           <Tooltip contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #E2E8F0', borderRadius: 12 }} />
+          <Legend />
           {normalMin != null && <ReferenceLine y={normalMin} stroke="#10B981" strokeDasharray="4 4" label={{ value: 'Normal Min', fill: '#10B981', fontSize: 10, position: 'left' }} />}
           {normalMax != null && <ReferenceLine y={normalMax} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Normal Max', fill: '#EF4444', fontSize: 10, position: 'left' }} />}
-          <Line type="monotone" dataKey="value" stroke={vital?.color || CHART_COLORS[0]} strokeWidth={2.5} dot={{ r: 3, fill: vital?.color || CHART_COLORS[0] }} activeDot={{ r: 5 }} />
+          <Line type="monotone" dataKey="value" name="Current" stroke={vital?.color || CHART_COLORS[0]} strokeWidth={2.5} dot={{ r: 3, fill: vital?.color || CHART_COLORS[0] }} activeDot={{ r: 5 }} />
+          {showCompare && <Line type="monotone" dataKey="prev" name="Previous Period" stroke="#94A3B8" strokeWidth={1.5} strokeDasharray="5 5" dot={{ r: 2, fill: '#94A3B8' }} />}
         </LineChart>
       </ResponsiveContainer>
     );
@@ -165,6 +215,10 @@ export default function Charts() {
             </Button>
           ))}
         </div>
+        <div className="flex items-center gap-2 ml-auto bg-white border border-[#E2E8F0] rounded-xl px-3 py-1.5">
+          <Switch checked={showCompare} onCheckedChange={setShowCompare} data-testid="compare-toggle" />
+          <Label className="text-xs text-[#64748B] cursor-pointer" onClick={() => setShowCompare(!showCompare)}>Compare</Label>
+        </div>
       </div>
 
       {/* Chart */}
@@ -174,6 +228,7 @@ export default function Charts() {
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: vital.color }} />
             <h2 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{vital.name}</h2>
             <Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-xs">{vital.unit}</Badge>
+            {trend && <TrendIndicator trend={trend} changePercent={changePercent} />}
           </div>
         )}
         {loading ? (
@@ -181,17 +236,16 @@ export default function Charts() {
         ) : renderChart()}
       </div>
 
-      {/* Stats */}
+      {/* Enhanced Stats with Period Comparison */}
       {stats.count > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatBox label="Average" value={stats.avg} unit={vital?.unit} />
-          <StatBox label="Minimum" value={stats.min} unit={vital?.unit} />
-          <StatBox label="Maximum" value={stats.max} unit={vital?.unit} />
-          <StatBox label="Readings" value={stats.count} unit="entries" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="chart-stats">
+          <CompareStatBox label="Average" current={stats.avg} previous={prevStats.avg} unit={vital?.unit} changePercent={changePercent} />
+          <CompareStatBox label="Minimum" current={stats.min} previous={prevStats.min} unit={vital?.unit} />
+          <CompareStatBox label="Maximum" current={stats.max} previous={prevStats.max} unit={vital?.unit} />
+          <CompareStatBox label="Readings" current={stats.count} previous={prevStats.count} unit="entries" />
         </div>
       )}
 
-      {/* Disclaimer */}
       <p className="text-xs text-[#64748B] text-center mt-4">
         Charts are for informational tracking only. Consult your healthcare provider for medical advice.
       </p>
@@ -199,13 +253,32 @@ export default function Charts() {
   );
 }
 
-function StatBox({ label, value, unit }) {
+function CompareStatBox({ label, current, previous, unit, changePercent: overrideChange }) {
+  let change = overrideChange;
+  if (change == null && previous != null && previous !== 0 && current != null) {
+    change = Math.round(((current - previous) / previous) * 100 * 10) / 10;
+  }
+  const isPositive = change > 0;
+  const isNegative = change < 0;
+
   return (
-    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4">
+    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4" data-testid={`stat-${label.toLowerCase()}`}>
       <p className="text-xs text-[#64748B] uppercase tracking-wide">{label}</p>
-      <p className="text-xl font-semibold text-[#0F172A] mt-1" style={{ fontFamily: 'Outfit' }}>
-        {value} <span className="text-xs font-normal text-[#64748B]">{unit}</span>
-      </p>
+      <div className="flex items-end gap-1.5 mt-1">
+        <p className="text-xl font-semibold text-[#0F172A] tabular-nums" style={{ fontFamily: 'Outfit' }}>{current}</p>
+        <span className="text-xs font-normal text-[#64748B] pb-0.5">{unit}</span>
+      </div>
+      {previous != null && (
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <span className="text-[10px] text-[#94A3B8]">Prev: {previous}</span>
+          {change != null && change !== 0 && (
+            <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold rounded-full px-1.5 py-0.5 ${isPositive ? 'bg-red-50 text-red-500' : isNegative ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-500'}`}>
+              {isPositive ? <ArrowUp weight="bold" className="w-2 h-2" /> : isNegative ? <ArrowDown weight="bold" className="w-2 h-2" /> : null}
+              {Math.abs(change)}%
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

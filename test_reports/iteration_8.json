@@ -1,0 +1,68 @@
+{
+  "summary": "Iteration 8: Verified period-comparison analytics on /api/insights and /api/charts plus the new TrendArrow / Compare toggle UI on Dashboard and Charts pages. Backend pytest: 8 passed, 1 skipped (math test skipped because previous 14-day window has no seeded data). Frontend Playwright: Dashboard insights show trend arrows (Heart Rate +0.4% red rising, Weight -1.8% green falling) with Latest/Avg/Prev/min-max fields. Your Vitals sidebar shows inline TrendArrow next to today's value. Charts page renders vital selector, all 4 date-range buttons (7/14/30/90), Compare toggle, TrendIndicator (Falling ↓), and 4 CompareStatBoxes with Prev values + colored % change pills. Compare toggle adds Previous Period dashed line to chart legend.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Charts page line/area chart",
+        "issues": [
+          "Y-axis 'Normal Min' / 'Normal Max' ReferenceLine label is clipped at the chart's left edge (shows as 'lormal Min'). Consider position='insideLeft' with x-offset or smaller font.",
+          "When previous period has zero entries, AVG/MIN/MAX stat cards hide the 'Prev:' line (correct), but READINGS shows 'Prev: 0' which is inconsistent. Consider hiding Prev when previous count is 0."
+        ]
+      }
+    ]
+  },
+  "passed_tests": [
+    "POST /api/auth/login admin@example.com -> 200",
+    "GET /api/insights returns trend, change_percent, previous_average, min, max, entry_count for each vital",
+    "GET /api/insights weight & heart_rate have non-null previous_average and change_percent (14-day seed)",
+    "GET /api/charts/weight?start_date=..&end_date=.. returns stats, previous_stats, change_percent, trend",
+    "GET /api/charts/weight?compare=true returns previous_entries array (omitted when compare=false)",
+    "GET /api/charts/heart_rate returns valid stats (min<=max)",
+    "GET /api/charts/weight without auth -> 401",
+    "GET /api/insights without auth -> 401",
+    "UI Dashboard: Health Insights list shows TrendArrow with %, Status dot, Latest/Avg/Prev/min-max/readings",
+    "UI Dashboard: Your Vitals sidebar shows TrendArrow inline with today's value (heart_rate 85 bpm ↑0.4%, weight 68.8 kg ↓1.8%)",
+    "UI Charts: vital selector, date-range buttons (7/14/30/90), Compare toggle, TrendIndicator all render with data-testid",
+    "UI Charts: toggling Compare changes Recharts legend from 'Current' to 'Current, Previous Period' (overlay line appears)",
+    "UI Charts: switching to 7-day range refreshes stat cards (AVG 72 kg, Prev 70.7, 1.8% pill; MAX 74.5 Prev 74.8 0.4%; Readings 8 Prev 6 33.3%)"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration8_analytics.py",
+    "/app/test_reports/pytest/pytest_results_iteration8.xml"
+  ],
+  "action_items": [
+    "Optional: reposition Recharts ReferenceLine labels so 'Normal Min/Max' text isn't clipped on the left edge.",
+    "Optional: in CompareStatBox, suppress 'Prev: 0' on count-style stats (Readings) when previous count == 0 for visual consistency with AVG/MIN/MAX."
+  ],
+  "critical_code_review_comments": [
+    "Charts.js line 100-109: previous-period overlay aligns prev entries by *index* into current entries, not by date offset. If either period has missing days, the overlay is misaligned. Consider mapping by day-offset from start_date.",
+    "vitals.py _compute_stats: returns avg=None when list empty, but change_percent guard at line 132 uses `prev_stats['avg']` truthiness — if avg==0 this would incorrectly be treated as missing. Use explicit `is not None` check.",
+    "vitals.py get_chart_data trend computation uses only last 3 values (vals[-3:]) — for a 90-day range this is a very narrow trend window. Consider linear regression or first-vs-last-quarter comparison for longer ranges.",
+    "Dashboard.js TrendArrow: 'rising' is always shown as red and 'falling' as green. For some vitals (e.g., physical_activity, hydration_level, sleep_duration) rising is *good*. Consider a per-vital direction-good map to color trends correctly."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration8_analytics.py"
+  ],
+  "success_rate": {
+    "backend": "100% (8/8 executed, 1 skipped due to seed data window)",
+    "frontend": "100% (all critical UI flows verified)"
+  },
+  "test_credentials": {
+    "admin1": "admin@example.com / admin123"
+  },
+  "seed_data_creation": "Used existing seed (14 days of weight 68-75 kg & heart_rate 65-90 bpm for admin1). No new seeding required.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All iteration-8 features (TrendArrow, period-comparison stats, Compare toggle, previous_entries overlay) are functional end-to-end. Backend /api/insights and /api/charts/{vital_key} return the new fields. UI renders trend arrows colored correctly (rising=red, falling=green). Two design refinements + four code-review notes flagged for E1's discretion. Key data-testid: insight-{vital_key}, vital-card-{vital_key}, chart-vital-select, chart-range-{7|14|30|90}, compare-toggle, stat-{average|minimum|maximum|readings}, charts-page, user-dashboard.",
+  "rca_of_the_issue": "N/A - no failures",
+  "mocked_apis": {
+    "has_mocked_apis": false,
+    "mocked_apis_list": []
+  }
+}
