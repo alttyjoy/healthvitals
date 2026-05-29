@@ -687,9 +687,16 @@ async def generate_export(req: ExportRequest, request: Request):
         for e in entries:
             vtype = next((v for v in VITAL_TYPES if v["key"] == e["vital_key"]), {})
             writer.writerow([e["date"], vtype.get("name", e["vital_key"]), e.get("value", ""), e.get("value2", ""), vtype.get("unit", ""), e.get("notes", "")])
+        # Summary stats
+        writer.writerow([])
+        writer.writerow(["--- Summary Statistics ---"])
+        for vk in req.vital_keys:
+            vtype = next((v for v in VITAL_TYPES if v["key"] == vk), {})
+            vals = [e["value"] for e in entries if e["vital_key"] == vk and e.get("value") is not None]
+            if vals:
+                writer.writerow([vtype.get("name", vk), f"Min: {min(vals)}", f"Max: {max(vals)}", f"Avg: {round(sum(vals)/len(vals), 1)}", f"Count: {len(vals)}"])
         output.seek(0)
-        # Log export
-        await db.exports.insert_one({"user_id": uid, "type": "csv", "vital_keys": req.vital_keys, "start_date": req.start_date, "end_date": req.end_date, "created_at": datetime.now(timezone.utc).isoformat()})
+        await db.exports.insert_one({"user_id": uid, "type": "csv", "vital_keys": req.vital_keys, "start_date": req.start_date, "end_date": req.end_date, "entry_count": len(entries), "created_at": datetime.now(timezone.utc).isoformat()})
         return StreamingResponse(
             io.BytesIO(output.getvalue().encode()),
             media_type="text/csv",
@@ -698,34 +705,71 @@ async def generate_export(req: ExportRequest, request: Request):
     elif req.format == "pdf":
         from fpdf import FPDF
         pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=20)
         pdf.add_page()
-        pdf.set_font("Helvetica", "B", 16)
+        # Header
+        pdf.set_fill_color(14, 165, 233)
+        pdf.rect(0, 0, 210, 35, 'F')
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font("Helvetica", "B", 18)
+        pdf.set_y(8)
         pdf.cell(0, 10, "VitalTrack Health Report", ln=True, align="C")
-        pdf.set_font("Helvetica", "", 10)
-        pdf.cell(0, 8, f"Period: {req.start_date} to {req.end_date}", ln=True, align="C")
-        pdf.cell(0, 8, f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}", ln=True, align="C")
-        pdf.ln(5)
-        if plan["key"] == "free":
-            pdf.set_font("Helvetica", "I", 8)
-            pdf.cell(0, 6, "Free Plan - Upgrade for full reports without watermark", ln=True, align="C")
-            pdf.ln(3)
-        pdf.set_font("Helvetica", "B", 10)
-        col_widths = [25, 40, 25, 25, 20, 55]
-        headers = ["Date", "Vital", "Value", "Value2", "Unit", "Notes"]
-        for i, h in enumerate(headers):
-            pdf.cell(col_widths[i], 8, h, border=1, align="C")
-        pdf.ln()
         pdf.set_font("Helvetica", "", 9)
+        pdf.cell(0, 6, f"{user.get('name', 'User')} | {req.start_date} to {req.end_date} | Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}", ln=True, align="C")
+        pdf.set_text_color(0, 0, 0)
+        pdf.ln(8)
+        # Watermark for free plan
+        if plan["key"] == "free":
+            pdf.set_font("Helvetica", "I", 7)
+            pdf.set_text_color(180, 180, 180)
+            pdf.cell(0, 5, "FREE PLAN - Upgrade to Standard or Premium for full reports without watermark", ln=True, align="C")
+            pdf.set_text_color(0, 0, 0)
+            pdf.ln(3)
+        # Data table
+        pdf.set_font("Helvetica", "B", 9)
+        pdf.set_fill_color(248, 250, 252)
+        col_w = [24, 38, 24, 24, 18, 62]
+        headers_row = ["Date", "Vital", "Value", "Value2", "Unit", "Notes"]
+        for i, h in enumerate(headers_row):
+            pdf.cell(col_w[i], 8, h, border=1, align="C", fill=True)
+        pdf.ln()
+        pdf.set_font("Helvetica", "", 8)
         for e in entries:
             vtype = next((v for v in VITAL_TYPES if v["key"] == e["vital_key"]), {})
-            row = [e["date"], vtype.get("name", e["vital_key"])[:20], str(e.get("value", "")), str(e.get("value2", "")), vtype.get("unit", ""), (e.get("notes", "") or "")[:30]]
+            row = [e["date"], vtype.get("name", e["vital_key"])[:20], str(e.get("value", "")), str(e.get("value2", "")), vtype.get("unit", ""), (e.get("notes", "") or "")[:32]]
             for i, val in enumerate(row):
-                pdf.cell(col_widths[i], 7, val, border=1)
+                pdf.cell(col_w[i], 6, val, border=1)
             pdf.ln()
+        # Summary statistics
+        pdf.ln(6)
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.set_text_color(14, 165, 233)
+        pdf.cell(0, 8, "Summary Statistics", ln=True)
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font("Helvetica", "B", 8)
+        pdf.set_fill_color(248, 250, 252)
+        for h_text, w in [("Vital", 50), ("Min", 25), ("Max", 25), ("Average", 30), ("Entries", 25)]:
+            pdf.cell(w, 7, h_text, border=1, align="C", fill=True)
+        pdf.ln()
+        pdf.set_font("Helvetica", "", 8)
+        for vk in req.vital_keys:
+            vtype = next((v for v in VITAL_TYPES if v["key"] == vk), {})
+            vals = [e["value"] for e in entries if e["vital_key"] == vk and e.get("value") is not None]
+            if vals:
+                row_data = [vtype.get("name", vk)[:26], str(round(min(vals), 1)), str(round(max(vals), 1)), str(round(sum(vals)/len(vals), 1)), str(len(vals))]
+                for val, w in zip(row_data, [50, 25, 25, 30, 25]):
+                    pdf.cell(w, 6, val, border=1, align="C")
+                pdf.ln()
+        # Footer watermark for free
+        if plan["key"] == "free":
+            pdf.set_y(-30)
+            pdf.set_font("Helvetica", "B", 28)
+            pdf.set_text_color(230, 230, 230)
+            pdf.cell(0, 10, "VITALTRACK FREE", align="C")
         buf = io.BytesIO()
         pdf.output(buf)
         buf.seek(0)
-        await db.exports.insert_one({"user_id": uid, "type": "pdf", "vital_keys": req.vital_keys, "start_date": req.start_date, "end_date": req.end_date, "created_at": datetime.now(timezone.utc).isoformat()})
+        await db.exports.insert_one({"user_id": uid, "type": "pdf", "vital_keys": req.vital_keys, "start_date": req.start_date, "end_date": req.end_date, "entry_count": len(entries), "created_at": datetime.now(timezone.utc).isoformat()})
         return StreamingResponse(buf, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=vitals_{req.start_date}_{req.end_date}.pdf"})
     raise HTTPException(status_code=400, detail="Invalid format")
 
@@ -1817,6 +1861,81 @@ async def record_coupon_usage(user_id: str, code: str):
         "used_at": datetime.now(timezone.utc).isoformat()
     })
     await db.coupons.update_one({"code": code}, {"$inc": {"used_count": 1}})
+
+# ==================== PUSH NOTIFICATIONS ====================
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY", "").replace("\\n", "\n")
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_EMAIL = os.environ.get("VAPID_EMAIL", "mailto:admin@vitaltrack.in")
+
+@api_router.get("/push/vapid-key")
+async def get_vapid_public_key():
+    return {"public_key": VAPID_PUBLIC_KEY}
+
+@api_router.post("/push/subscribe")
+async def push_subscribe(request: Request):
+    user = await get_current_user(request)
+    body = await request.json()
+    subscription = body.get("subscription")
+    if not subscription or not subscription.get("endpoint"):
+        raise HTTPException(status_code=400, detail="Invalid subscription data")
+    uid = str(user["_id"])
+    await db.push_subscriptions.update_one(
+        {"user_id": uid, "endpoint": subscription["endpoint"]},
+        {"$set": {"user_id": uid, "subscription": subscription, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"message": "Subscribed to push notifications"}
+
+@api_router.post("/push/unsubscribe")
+async def push_unsubscribe(request: Request):
+    user = await get_current_user(request)
+    body = await request.json()
+    endpoint = body.get("endpoint", "")
+    uid = str(user["_id"])
+    await db.push_subscriptions.delete_many({"user_id": uid, "endpoint": endpoint} if endpoint else {"user_id": uid})
+    return {"message": "Unsubscribed from push notifications"}
+
+@api_router.get("/push/status")
+async def push_status(request: Request):
+    user = await get_current_user(request)
+    count = await db.push_subscriptions.count_documents({"user_id": str(user["_id"])})
+    return {"subscribed": count > 0, "subscription_count": count}
+
+@api_router.post("/admin/push/send")
+async def admin_send_push(request: Request):
+    admin = await get_admin_user(request)
+    body = await request.json()
+    title = body.get("title", "VitalTrack")
+    message = body.get("message", "")
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+    from pywebpush import webpush, WebPushException
+    subs = await db.push_subscriptions.find({}).to_list(10000)
+    sent = 0
+    failed = 0
+    for sub in subs:
+        try:
+            webpush(
+                subscription_info=sub["subscription"],
+                data=json.dumps({"title": title, "body": message, "icon": "/logo192.png"}),
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": VAPID_EMAIL}
+            )
+            sent += 1
+        except WebPushException as e:
+            if "410" in str(e) or "404" in str(e):
+                await db.push_subscriptions.delete_one({"_id": sub["_id"]})
+            failed += 1
+        except Exception:
+            failed += 1
+    await db.audit_logs.insert_one({"user_id": str(admin["_id"]), "action": "push_sent", "details": f"Push: '{title}' sent={sent} failed={failed}", "created_at": datetime.now(timezone.utc)})
+    return {"message": f"Push sent to {sent} subscribers", "sent": sent, "failed": failed}
+
+@api_router.get("/admin/push/stats")
+async def admin_push_stats(request: Request):
+    await get_admin_user(request)
+    total = await db.push_subscriptions.count_documents({})
+    return {"total_subscribers": total}
 
 # ==================== APP CONFIG ====================
 app.add_middleware(
