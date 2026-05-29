@@ -22,7 +22,9 @@ const DATE_RANGES = [
   { label: '90 Days', days: 90 },
 ];
 
-function TrendIndicator({ trend, changePercent }) {
+const RISING_IS_GOOD = new Set(['sleep_duration', 'physical_activity', 'hydration', 'blood_oxygen']);
+
+function TrendIndicator({ trend, changePercent, vitalKey }) {
   if (!trend || trend === 'stable') {
     return (
       <div className="flex items-center gap-1 text-[#64748B]">
@@ -32,7 +34,9 @@ function TrendIndicator({ trend, changePercent }) {
     );
   }
   const isUp = trend === 'rising';
-  const color = isUp ? '#EF4444' : '#10B981';
+  const risingGood = RISING_IS_GOOD.has(vitalKey);
+  const isGood = risingGood ? isUp : !isUp;
+  const color = isGood ? '#10B981' : '#EF4444';
   const Icon = isUp ? ArrowUp : ArrowDown;
   return (
     <div className="flex items-center gap-1" style={{ color }}>
@@ -173,8 +177,8 @@ export default function Charts() {
           <YAxis fontSize={11} tick={{ fill: '#64748B' }} />
           <Tooltip contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #E2E8F0', borderRadius: 12 }} />
           <Legend />
-          {normalMin != null && <ReferenceLine y={normalMin} stroke="#10B981" strokeDasharray="4 4" label={{ value: 'Normal Min', fill: '#10B981', fontSize: 10, position: 'left' }} />}
-          {normalMax != null && <ReferenceLine y={normalMax} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Normal Max', fill: '#EF4444', fontSize: 10, position: 'left' }} />}
+          {normalMin != null && <ReferenceLine y={normalMin} stroke="#10B981" strokeDasharray="4 4" label={{ value: 'Min', fill: '#10B981', fontSize: 10, position: 'insideTopRight' }} />}
+          {normalMax != null && <ReferenceLine y={normalMax} stroke="#EF4444" strokeDasharray="4 4" label={{ value: 'Max', fill: '#EF4444', fontSize: 10, position: 'insideTopRight' }} />}
           <Line type="monotone" dataKey="value" name="Current" stroke={vital?.color || CHART_COLORS[0]} strokeWidth={2.5} dot={{ r: 3, fill: vital?.color || CHART_COLORS[0] }} activeDot={{ r: 5 }} />
           {showCompare && <Line type="monotone" dataKey="prev" name="Previous Period" stroke="#94A3B8" strokeWidth={1.5} strokeDasharray="5 5" dot={{ r: 2, fill: '#94A3B8' }} />}
         </LineChart>
@@ -228,7 +232,7 @@ export default function Charts() {
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: vital.color }} />
             <h2 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{vital.name}</h2>
             <Badge className="bg-[#F8FAFC] text-[#64748B] border border-[#E2E8F0] text-xs">{vital.unit}</Badge>
-            {trend && <TrendIndicator trend={trend} changePercent={changePercent} />}
+            {trend && <TrendIndicator trend={trend} changePercent={changePercent} vitalKey={selectedVital} />}
           </div>
         )}
         {loading ? (
@@ -268,7 +272,7 @@ function CompareStatBox({ label, current, previous, unit, changePercent: overrid
         <p className="text-xl font-semibold text-[#0F172A] tabular-nums" style={{ fontFamily: 'Outfit' }}>{current}</p>
         <span className="text-xs font-normal text-[#64748B] pb-0.5">{unit}</span>
       </div>
-      {previous != null && (
+      {previous != null && previous !== 0 && (
         <div className="flex items-center gap-1.5 mt-1.5">
           <span className="text-[10px] text-[#94A3B8]">Prev: {previous}</span>
           {change != null && change !== 0 && (

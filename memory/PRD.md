@@ -13,34 +13,21 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 ## Backend Architecture (Decomposed)
 ```
 /app/backend/
-├── server.py        # Slim orchestrator (~130 lines) - app, CORS, startup/shutdown, router mounting
-├── config.py        # DB, JWT, constants (VITAL_TYPES, PLANS, TRANSLATIONS, CONTENT_PAGES), payment clients, VAPID, scheduler
+├── server.py        # Slim orchestrator (~130 lines)
+├── config.py        # DB, JWT, constants, payment clients, VAPID, scheduler
 ├── models.py        # All Pydantic request models
 ├── utils.py         # Auth helpers, email, serialization, reminders
 ├── routes/
 │   ├── auth.py      # Auth: register, login, logout, me, refresh, forgot/reset password, profile
-│   ├── vitals.py    # Vitals: types, enabled, toggle, entries CRUD, charts, insights, reminders
-│   ├── exports.py   # CSV & PDF export generation, export list
-│   ├── sharing.py   # Shared reports: create, list, view (with/without password), revoke
-│   ├── referral.py  # Referral info, apply referral code
-│   ├── push.py      # Push notifications: VAPID key, subscribe, unsubscribe, status, admin send/stats
-│   ├── content.py   # Public content pages, translations, languages, blog CRUD
-│   ├── payments.py  # Plans, subscription, Razorpay (order/verify/webhook), PayU (initiate/callback)
-│   ├── admin.py     # Admin: dashboard, users CRUD, analytics, SMTP, reminders, content pages, coupons
-│   └── sync.py      # Device sync: register-device, pull, push, devices list, remove device
-```
-
-## Frontend Architecture (Decomposed)
-```
-/app/frontend/src/
-├── pages/
-│   ├── AdminPanel.js (200 lines) → imports UserManagement, CouponManagement, AdminSettings, ContentManagement
-│   ├── Settings.js (340 lines) → imports ReferralSection, PushNotificationSettings
-│   └── ... (other pages unchanged)
-├── components/
-│   ├── admin/       # UserManagement, CouponManagement, AdminSettings, ContentManagement
-│   ├── settings/    # ReferralSection, PushNotificationSettings
-│   └── ui/          # Shadcn components
+│   ├── vitals.py    # Vitals: types, enabled, toggle, entries CRUD, charts (with stats+comparison), insights (with trends+comparison)
+│   ├── exports.py   # CSV & PDF export generation
+│   ├── sharing.py   # Shared reports CRUD
+│   ├── referral.py  # Referral system
+│   ├── push.py      # Push notifications (VAPID, subscribe, status, admin send)
+│   ├── content.py   # Public content pages, translations, blog
+│   ├── payments.py  # Plans, subscription, Razorpay, PayU
+│   ├── admin.py     # Admin: dashboard, users CRUD, analytics, SMTP, reminders, content, coupons
+│   └── sync.py      # Device sync: register, pull, push, devices
 ```
 
 ## What's Been Implemented
@@ -54,15 +41,22 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 ### Phase 7 — Code Quality Fixes (May 29, 2026)
 - XSS Fix (DOMPurify), Hardcoded Secrets moved to .env
 - React Hook Dependencies fixed, Empty Error Handlers filled
-- Array Index Keys replaced with stable identifiers
 
 ### Phase 8 — Decomposition & Device Sync (May 29, 2026)
-- **Backend decomposed**: server.py 1954 lines → 10 route modules + config + models + utils (~130 line orchestrator)
-- **Frontend decomposed**: AdminPanel.js 839→200 lines (4 sub-components), Settings.js 427→340 lines (2 sub-components)
-- **Push Notifications**: Frontend fetches VAPID key from backend API, toggle UI in Settings
-- **CSV/PDF Export**: Verified end-to-end with summary statistics, watermarking
-- **Device Sync API**: New endpoints for multi-device support (register, pull, push, list, remove)
-- **Testing**: 25/25 backend tests, 100% frontend UI tests passed (iteration_7)
+- Backend decomposed: 1954-line monolith → 10 route modules
+- Frontend decomposed: AdminPanel 839→200 lines, Settings 427→340 lines
+- Push Notifications: VAPID key from API, toggle UI in Settings
+- CSV/PDF Export: Verified end-to-end
+- Device Sync API: register, pull, push, list, remove
+
+### Phase 9 — Advanced Analytics (May 29, 2026)
+- **Enhanced /api/insights**: Returns `change_percent`, `previous_average`, `min`, `max`, `trend` per vital (this week vs last week)
+- **Enhanced /api/charts/{vital_key}**: Returns `stats`, `previous_stats`, `change_percent`, `trend`; supports `compare=true` to get `previous_entries` for overlay
+- **Dashboard trend arrows**: Color-coded (context-aware: rising=bad for BP/glucose, good for sleep/activity), % change, prev avg, min-max range per insight
+- **Dashboard vitals sidebar**: Inline trend arrows with % change next to today's value
+- **Charts Compare toggle**: Overlays previous period as dashed ghost line on chart
+- **Charts enhanced stat cards**: Current + previous values with colored % change pill badges
+- **Trend color logic**: Per-vital direction mapping (RISING_IS_GOOD set for sleep, activity, hydration, blood_oxygen)
 
 ## Pricing (INR)
 - Free: ₹0 (2 vitals, 7-day history, CSV only)
@@ -74,11 +68,9 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 - [ ] Stripe payment gateway integration (3rd gateway option)
 
 ### P2
-- [ ] Advanced analytics (period comparison, trend arrows)
 - [ ] AI-powered health insights
 
 ### P3
 - [ ] Mobile app API hardening (React Native / Flutter)
 - [ ] Migrate to FastAPI lifespan context manager
 - [ ] Replace browser-default time inputs with shadcn components
-- [ ] Standardize timestamp storage format across DB collections

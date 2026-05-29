@@ -129,7 +129,7 @@ async def get_chart_data(vital_key: str, request: Request, start_date: str = Que
     prev_stats = _compute_stats(prev_vals)
     # Compute change percent
     change_percent = None
-    if prev_stats["avg"] and stats["avg"] and prev_stats["avg"] != 0:
+    if prev_stats["avg"] is not None and stats["avg"] is not None and prev_stats["avg"] != 0:
         change_percent = round(((stats["avg"] - prev_stats["avg"]) / prev_stats["avg"]) * 100, 1)
     # Trend
     trend = "stable"

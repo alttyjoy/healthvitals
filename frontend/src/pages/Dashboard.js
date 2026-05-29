@@ -10,7 +10,10 @@ import {
   TrendUp, TrendDown, Minus, ArrowUp, ArrowDown
 } from '@phosphor-icons/react';
 
-function TrendArrow({ trend, changePercent }) {
+// Vitals where rising is positive/good (green up, red down)
+const RISING_IS_GOOD = new Set(['sleep_duration', 'physical_activity', 'hydration', 'blood_oxygen']);
+
+function TrendArrow({ trend, changePercent, vitalKey }) {
   if (!trend || trend === 'stable') {
     return (
       <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-[#64748B] bg-[#F1F5F9] rounded-full px-1.5 py-0.5">
@@ -19,8 +22,10 @@ function TrendArrow({ trend, changePercent }) {
     );
   }
   const isUp = trend === 'rising';
-  const color = isUp ? '#EF4444' : '#10B981';
-  const bg = isUp ? 'bg-red-50' : 'bg-emerald-50';
+  const risingGood = RISING_IS_GOOD.has(vitalKey);
+  const isGood = risingGood ? isUp : !isUp;
+  const color = isGood ? '#10B981' : '#EF4444';
+  const bg = isGood ? 'bg-emerald-50' : 'bg-red-50';
   const Icon = isUp ? ArrowUp : ArrowDown;
   return (
     <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold rounded-full px-1.5 py-0.5 ${bg}`} style={{ color }}>
@@ -126,7 +131,7 @@ export default function Dashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-[#0F172A]">{ins.vital_name}</span>
-                      <TrendArrow trend={ins.trend} changePercent={ins.change_percent} />
+                      <TrendArrow trend={ins.trend} changePercent={ins.change_percent} vitalKey={ins.vital_key} />
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-xs text-[#64748B]">
@@ -201,7 +206,7 @@ export default function Dashboard() {
                         <span className="text-sm text-[#0F172A] truncate">{vital.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {insight && <TrendArrow trend={insight.trend} changePercent={insight.change_percent} />}
+                        {insight && <TrendArrow trend={insight.trend} changePercent={insight.change_percent} vitalKey={vk} />}
                         <span className="text-sm font-medium tabular-nums" style={{ color: todayEntry ? getStatusColor(status) : '#64748B' }}>
                           {todayEntry ? `${todayEntry.value}` : '—'}
                         </span>
