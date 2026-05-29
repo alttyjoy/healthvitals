@@ -44,7 +44,9 @@ export function PushNotificationSettings() {
         if (permission !== 'granted') { toast.error('Notification permission denied'); setToggling(false); return; }
         const reg = await navigator.serviceWorker.register('/sw-push.js');
         await navigator.serviceWorker.ready;
-        const vapidKey = process.env.REACT_APP_VAPID_PUBLIC_KEY;
+        const { data: vapidData } = await api.get('/push/vapid-key');
+        const vapidKey = vapidData.public_key;
+        if (!vapidKey) { toast.error('Push notification keys not configured'); setToggling(false); return; }
         const subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(vapidKey)
