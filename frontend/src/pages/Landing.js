@@ -101,7 +101,7 @@ export default function Landing() {
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `url("https://static.prod-images.emergentagent.com/jobs/5b2bf7cd-4a4c-4ab4-a4a8-7fc4ef4c140f/images/682a0b7f8e530af3f32d69f922f39c29da09a79d7e77fbe3af46054e7768646c.png")`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="max-w-7xl mx-auto relative">
           <div className="max-w-3xl animate-fade-in-up">
-            <Badge className="bg-[#0EA5E9]/10 text-[#0EA5E9] border-0 rounded-full px-4 py-1.5 text-xs tracking-wide font-medium mb-6">
+            <Badge className="bg-[#0EA5E9]/10 text-[#0EA5E9] border-0 rounded-full px-4 py-1.5 text-xs tracking-wide font-medium mb-6 hover:bg-[#0EA5E9]/15 cursor-default">
               Health Vitals Tracking Platform
             </Badge>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl tracking-tight font-light text-[#0F172A] mb-4 sm:mb-6 leading-[1.1]" style={{ fontFamily: 'Outfit' }}>
@@ -118,7 +118,7 @@ export default function Landing() {
                 </Button>
               </Link>
               <a href="#features">
-                <Button variant="outline" className="rounded-full border-[#E2E8F0] text-[#64748B] px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base hover:bg-[#E2E8F0] w-full sm:w-auto" data-testid="hero-learn-more-btn">
+                <Button variant="outline" className="rounded-full border-[#E2E8F0] text-[#64748B] px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base hover:bg-[#0EA5E9]/10 hover:text-[#0EA5E9] hover:border-[#0EA5E9]/30 w-full sm:w-auto transition-all" data-testid="hero-learn-more-btn">
                   Learn More
                 </Button>
               </a>

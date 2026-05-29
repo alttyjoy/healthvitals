@@ -5,8 +5,9 @@ import { useSearchParams } from 'react-router-dom';
 import api, { formatApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Check, Star, CreditCard, ArrowUp, ArrowDown, Lightning } from '@phosphor-icons/react';
+import { Check, Star, CreditCard, ArrowUp, ArrowDown, Lightning, Tag, X } from '@phosphor-icons/react';
 
 export default function Billing() {
   const { user, refreshUser } = useAuth();
@@ -15,6 +16,10 @@ export default function Billing() {
   const [loading, setLoading] = useState(true);
   const [changing, setChanging] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
+  // Coupon
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null); // { code, discount_percent }
+  const [couponLoading, setCouponLoading] = useState(false);
 
   useEffect(() => {
     api.get('/plans').then(res => { setPlans(res.data || []); setLoading(false); }).catch(() => setLoading(false));
@@ -38,10 +43,31 @@ export default function Billing() {
   const currentPlan = user?.plan || 'free';
   const planOrder = ['free', 'standard', 'premium'];
 
+  const handleApplyCoupon = async (planKey) => {
+    if (!couponInput.trim()) { toast.error('Enter a coupon code'); return; }
+    setCouponLoading(true);
+    try {
+      const { data } = await api.post('/coupons/validate', { code: couponInput.trim(), plan_key: planKey || '' });
+      setAppliedCoupon({ code: data.code, discount_percent: data.discount_percent });
+      setCouponInput('');
+      toast.success(`Coupon applied! ${data.discount_percent}% discount`);
+    } catch (err) {
+      toast.error(formatApiError(err));
+    } finally { setCouponLoading(false); }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    toast.info('Coupon removed');
+  };
+
   const handleRazorpayPayment = useCallback(async (planKey) => {
     setChanging(planKey);
     try {
-      const { data: orderData } = await api.post('/razorpay/create-order', { plan_key: planKey, billing_cycle: 'monthly' });
+      const { data: orderData } = await api.post('/razorpay/create-order', {
+        plan_key: planKey, billing_cycle: 'monthly',
+        coupon_code: appliedCoupon?.code || ''
+      });
 
       if (!window.Razorpay) {
         await new Promise((resolve, reject) => {
@@ -67,6 +93,7 @@ export default function Billing() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               plan_key: planKey,
+              coupon_code: appliedCoupon?.code || '',
             });
             await refreshUser();
             toast.success(`Successfully upgraded to ${orderData.plan.name} plan!`);
@@ -96,7 +123,10 @@ export default function Billing() {
   const handlePayUPayment = useCallback(async (planKey) => {
     setChanging(planKey);
     try {
-      const { data } = await api.post('/payu/initiate', { plan_key: planKey, billing_cycle: 'monthly' });
+      const { data } = await api.post('/payu/initiate', {
+        plan_key: planKey, billing_cycle: 'monthly',
+        coupon_code: appliedCoupon?.code || ''
+      });
       // PayU requires a form POST to the payment URL
       const form = document.createElement('form');
       form.method = 'POST';
@@ -199,6 +229,39 @@ export default function Billing() {
         </div>
       </div>
 
+      {/* Coupon Code */}
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        <p className="text-xs text-[#64748B] uppercase tracking-wide mb-3">Have a Coupon?</p>
+        {appliedCoupon ? (
+          <div className="flex items-center justify-between bg-[#10B981]/10 border border-[#10B981]/20 rounded-xl px-4 py-3" data-testid="applied-coupon-badge">
+            <div className="flex items-center gap-2">
+              <Tag weight="duotone" className="w-5 h-5 text-[#10B981]" />
+              <span className="font-mono font-semibold text-[#10B981]">{appliedCoupon.code}</span>
+              <span className="text-sm text-[#10B981]">— {appliedCoupon.discount_percent}% off</span>
+            </div>
+            <button onClick={removeCoupon} className="p-1 hover:bg-[#10B981]/20 rounded-lg transition-colors" data-testid="remove-coupon-btn">
+              <X className="w-4 h-4 text-[#10B981]" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2" data-testid="coupon-input-section">
+            <Input
+              value={couponInput}
+              onChange={e => setCouponInput(e.target.value.toUpperCase())}
+              placeholder="Enter coupon code"
+              className="rounded-xl border-[#E2E8F0] bg-[#F8FAFC] font-mono uppercase flex-1"
+              data-testid="coupon-code-input"
+              onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+            />
+            <Button onClick={() => handleApplyCoupon()} disabled={couponLoading}
+              data-testid="apply-coupon-btn"
+              className="rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white px-5">
+              {couponLoading ? 'Checking...' : 'Apply'}
+            </Button>
+          </div>
+        )}
+      </div>
+
       {/* Plan Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map(plan => {
@@ -227,11 +290,23 @@ export default function Billing() {
               )}
               <h3 className="text-lg font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
               <div className="flex items-baseline gap-1 mt-2 mb-1">
-                <span className="text-3xl font-semibold text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>
-                  {plan.price === 0 ? 'Free' : `₹${plan.price}`}
-                </span>
+                {appliedCoupon && plan.price > 0 ? (
+                  <>
+                    <span className="text-lg line-through text-[#64748B]" style={{ fontFamily: 'Outfit' }}>₹{plan.price}</span>
+                    <span className="text-3xl font-semibold text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>
+                      ₹{Math.round(plan.price * (1 - appliedCoupon.discount_percent / 100))}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-3xl font-semibold text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>
+                    {plan.price === 0 ? 'Free' : `₹${plan.price}`}
+                  </span>
+                )}
                 {plan.price > 0 && <span className="text-sm text-[#64748B]">/month</span>}
               </div>
+              {appliedCoupon && plan.price > 0 && (
+                <p className="text-xs text-[#10B981] font-medium mb-1">{appliedCoupon.discount_percent}% off with {appliedCoupon.code}</p>
+              )}
               {plan.price_yearly > 0 && (
                 <p className="text-xs text-[#64748B] mb-4">or ₹{plan.price_yearly}/year (save {Math.round((1 - plan.price_yearly / (plan.price * 12)) * 100)}%)</p>
               )}

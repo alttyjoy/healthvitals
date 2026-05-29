@@ -55,9 +55,9 @@ VITAL_TYPES = [
 ]
 
 PLANS = [
-    {"key": "free", "name": "Free", "price": 0, "price_yearly": 0, "currency": "INR", "vital_limit": 2, "chart_history_days": 7, "csv_export": True, "pdf_export": False, "sharing": False, "features": ["Track any 2 vitals", "7-day chart history", "Basic CSV export", "Basic reminders"]},
-    {"key": "standard", "name": "Standard", "price": 299, "price_yearly": 2999, "currency": "INR", "vital_limit": 6, "chart_history_days": 365, "csv_export": True, "pdf_export": True, "sharing": True, "features": ["Track any 6 vitals", "Full 1-year history", "CSV & PDF export", "Shareable reports", "Advanced reminders", "Better analytics"]},
-    {"key": "premium", "name": "Premium", "price": 499, "price_yearly": 4999, "currency": "INR", "vital_limit": 12, "chart_history_days": -1, "csv_export": True, "pdf_export": True, "sharing": True, "features": ["Track all 12 vitals", "Unlimited history", "All export formats", "Full sharing", "Priority support", "Advanced analytics"]},
+    {"key": "free", "name": "Free", "price": 0, "price_yearly": 0, "currency": "INR", "vital_limit": 2, "chart_history_days": 7, "csv_export": True, "pdf_export": False, "sharing": False, "features": ["Track any 2 vitals of your choice", "7-day chart history", "Basic CSV export", "Basic reminders"]},
+    {"key": "standard", "name": "Standard", "price": 299, "price_yearly": 2999, "currency": "INR", "vital_limit": 6, "chart_history_days": 365, "csv_export": True, "pdf_export": True, "sharing": True, "features": ["Track any 6 vitals of your choice", "Full 1-year history", "CSV & PDF export", "Shareable reports", "Advanced reminders", "Better analytics"]},
+    {"key": "premium", "name": "Premium", "price": 499, "price_yearly": 4999, "currency": "INR", "vital_limit": 12, "chart_history_days": -1, "csv_export": True, "pdf_export": True, "sharing": True, "features": ["Track all 12 vitals", "Unlimited history", "CSV & PDF export formats", "Full sharing", "Priority support", "Advanced analytics"]},
 ]
 
 VITAL_KEYS = [v["key"] for v in VITAL_TYPES]
@@ -185,12 +185,14 @@ class SharedReportAccessRequest(BaseModel):
 class RazorpayOrderRequest(BaseModel):
     plan_key: str
     billing_cycle: str = "monthly"
+    coupon_code: str = ""
 
 class RazorpayVerifyRequest(BaseModel):
     razorpay_order_id: str
     razorpay_payment_id: str
     razorpay_signature: str
     plan_key: str
+    coupon_code: str = ""
 
 class VitalToggleRequest(BaseModel):
     vital_key: str
@@ -332,7 +334,7 @@ async def startup():
     # Check if reminders are enabled
     reminder_settings = await db.settings.find_one({"key": "reminders"})
     if reminder_settings and reminder_settings.get("enabled"):
-        time_str = reminder_settings.get("time", "09:00")
+        time_str = reminder_settings.get("time", "08:00")
         hour, minute = map(int, time_str.split(":"))
         scheduler.add_job(check_and_send_reminders, "cron", hour=hour, minute=minute, id="daily_reminder", replace_existing=True)
         logger.info(f"Reminder job scheduled at {time_str}")
@@ -1012,6 +1014,14 @@ async def razorpay_create_order(req: RazorpayOrderRequest, request: Request):
     if not plan or plan["price"] == 0:
         raise HTTPException(status_code=400, detail="Invalid plan for payment")
     price = plan["price_yearly"] if req.billing_cycle == "yearly" else plan["price"]
+    # Apply coupon discount if provided
+    coupon_code = req.coupon_code.strip().upper() if req.coupon_code else ""
+    discount_percent = 0
+    if coupon_code:
+        coupon = await db.coupons.find_one({"code": coupon_code, "active": True})
+        if coupon:
+            discount_percent = coupon.get("discount_percent", 0)
+            price = round(price * (1 - discount_percent / 100))
     amount_paise = int(price * 100)
     try:
         order = razorpay_client.order.create({
@@ -1021,11 +1031,14 @@ async def razorpay_create_order(req: RazorpayOrderRequest, request: Request):
         await db.payment_transactions.insert_one({
             "user_id": str(user["_id"]), "order_id": order["id"], "plan_key": req.plan_key,
             "amount": price, "currency": "INR", "billing_cycle": req.billing_cycle,
+            "coupon_code": coupon_code, "discount_percent": discount_percent,
             "status": "created", "gateway": "razorpay",
             "created_at": datetime.now(timezone.utc).isoformat()
         })
         return {"order_id": order["id"], "amount": amount_paise, "currency": "INR",
-                "key_id": RAZORPAY_KEY_ID, "plan": plan}
+                "key_id": RAZORPAY_KEY_ID, "plan": plan,
+                "discount_percent": discount_percent, "coupon_code": coupon_code,
+                "final_price": price}
     except Exception as e:
         logger.error(f"Razorpay order creation failed: {e}")
         raise HTTPException(status_code=500, detail="Payment order creation failed")
@@ -1064,6 +1077,9 @@ async def razorpay_verify_payment(req: RazorpayVerifyRequest, request: Request):
         {"$set": {"payment_id": req.razorpay_payment_id, "status": "captured"}}
     )
     await db.audit_logs.insert_one({"user_id": uid, "action": "payment_success", "details": f"Razorpay: {req.plan_key}", "created_at": datetime.now(timezone.utc)})
+    # Record coupon usage if applicable
+    if req.coupon_code:
+        await record_coupon_usage(uid, req.coupon_code.strip().upper())
     return {"message": f"Payment successful! Plan upgraded to {new_plan['name']}", "plan": new_plan, "enabled_vitals": enabled}
 
 @api_router.post("/razorpay/webhook")
@@ -1147,6 +1163,7 @@ def verify_payu_hash(response_hash: str, params: dict, salt: str) -> bool:
 class PayUInitRequest(BaseModel):
     plan_key: str
     billing_cycle: str = "monthly"
+    coupon_code: str = ""
 
 @api_router.post("/payu/initiate")
 async def payu_initiate(req: PayUInitRequest, request: Request):
@@ -1157,12 +1174,21 @@ async def payu_initiate(req: PayUInitRequest, request: Request):
     if not plan or plan["price"] == 0:
         raise HTTPException(status_code=400, detail="Invalid plan for payment")
     price = plan["price_yearly"] if req.billing_cycle == "yearly" else plan["price"]
+    # Apply coupon discount
+    coupon_code = req.coupon_code.strip().upper() if req.coupon_code else ""
+    discount_percent = 0
+    if coupon_code:
+        coupon = await db.coupons.find_one({"code": coupon_code, "active": True})
+        if coupon:
+            discount_percent = coupon.get("discount_percent", 0)
+            price = round(price * (1 - discount_percent / 100))
     txnid = f"VT{secrets.token_hex(8)}"
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
     params = {
         "key": PAYU_KEY, "txnid": txnid, "amount": f"{price:.2f}",
         "productinfo": f"VitalTrack {plan['name']} Plan", "firstname": user.get("name", ""),
         "email": user.get("email", ""), "udf1": str(user["_id"]), "udf2": req.plan_key,
+        "udf3": coupon_code,
     }
     params["hash"] = generate_payu_hash(params, PAYU_SALT)
     params["surl"] = f"{frontend_url}/billing?payment=success&txnid={txnid}"
@@ -1171,6 +1197,7 @@ async def payu_initiate(req: PayUInitRequest, request: Request):
     await db.payment_transactions.insert_one({
         "user_id": str(user["_id"]), "txnid": txnid, "plan_key": req.plan_key,
         "amount": price, "currency": "INR", "gateway": "payu",
+        "coupon_code": coupon_code, "discount_percent": discount_percent,
         "status": "created", "created_at": datetime.now(timezone.utc).isoformat()
     })
     return {"payment_url": PAYU_ENDPOINT, "form_data": params, "txnid": txnid}
@@ -1682,6 +1709,109 @@ async def admin_delete_content_page(page_key: str, request: Request):
         raise HTTPException(status_code=400, detail="Cannot delete built-in pages")
     await db.content_pages.delete_one({"key": page_key})
     return {"message": "Page deleted"}
+
+# ==================== COUPON SYSTEM ====================
+class CouponRequest(BaseModel):
+    code: str
+    discount_percent: int
+    max_uses: int = 0  # 0 = unlimited
+    valid_plans: list = []  # empty = all plans
+    expires_at: str = ""  # ISO date string, empty = no expiry
+    active: bool = True
+
+@api_router.get("/admin/coupons")
+async def admin_list_coupons(request: Request):
+    await get_admin_user(request)
+    coupons = await db.coupons.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return {"coupons": coupons}
+
+@api_router.post("/admin/coupons")
+async def admin_create_coupon(req: CouponRequest, request: Request):
+    admin = await get_admin_user(request)
+    code = req.code.strip().upper()
+    if not code or not (1 <= req.discount_percent <= 100):
+        raise HTTPException(status_code=400, detail="Valid code and discount (1-100%) required")
+    existing = await db.coupons.find_one({"code": code})
+    if existing:
+        raise HTTPException(status_code=400, detail="Coupon code already exists")
+    doc = {
+        "code": code, "discount_percent": req.discount_percent,
+        "max_uses": req.max_uses, "used_count": 0,
+        "valid_plans": req.valid_plans, "expires_at": req.expires_at,
+        "active": req.active,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": str(admin["_id"])
+    }
+    await db.coupons.insert_one(doc)
+    await db.audit_logs.insert_one({"user_id": str(admin["_id"]), "action": "coupon_created", "details": f"Created coupon {code} ({req.discount_percent}% off)", "created_at": datetime.now(timezone.utc)})
+    return {"message": "Coupon created", "code": code}
+
+@api_router.put("/admin/coupons/{code}")
+async def admin_update_coupon(code: str, req: CouponRequest, request: Request):
+    await get_admin_user(request)
+    coupon = await db.coupons.find_one({"code": code.upper()})
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    await db.coupons.update_one({"code": code.upper()}, {"$set": {
+        "discount_percent": req.discount_percent, "max_uses": req.max_uses,
+        "valid_plans": req.valid_plans, "expires_at": req.expires_at,
+        "active": req.active, "updated_at": datetime.now(timezone.utc).isoformat()
+    }})
+    return {"message": "Coupon updated"}
+
+@api_router.delete("/admin/coupons/{code}")
+async def admin_delete_coupon(code: str, request: Request):
+    admin = await get_admin_user(request)
+    result = await db.coupons.delete_one({"code": code.upper()})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    await db.audit_logs.insert_one({"user_id": str(admin["_id"]), "action": "coupon_deleted", "details": f"Deleted coupon {code.upper()}", "created_at": datetime.now(timezone.utc)})
+    return {"message": "Coupon deleted"}
+
+# User-facing: validate coupon
+@api_router.post("/coupons/validate")
+async def validate_coupon(request: Request):
+    user = await get_current_user(request)
+    body = await request.json()
+    code = body.get("code", "").strip().upper()
+    plan_key = body.get("plan_key", "")
+    if not code:
+        raise HTTPException(status_code=400, detail="Coupon code is required")
+    coupon = await db.coupons.find_one({"code": code})
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Invalid coupon code")
+    if not coupon.get("active", True):
+        raise HTTPException(status_code=400, detail="This coupon is no longer active")
+    if coupon.get("max_uses", 0) > 0 and coupon.get("used_count", 0) >= coupon["max_uses"]:
+        raise HTTPException(status_code=400, detail="This coupon has reached its usage limit")
+    if coupon.get("expires_at"):
+        try:
+            exp_str = coupon["expires_at"].replace("Z", "+00:00")
+            exp = datetime.fromisoformat(exp_str)
+            # Make timezone-aware if naive
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > exp:
+                raise HTTPException(status_code=400, detail="This coupon has expired")
+        except (ValueError, TypeError):
+            pass
+    if coupon.get("valid_plans") and plan_key and plan_key not in coupon["valid_plans"]:
+        raise HTTPException(status_code=400, detail=f"This coupon is not valid for the {plan_key} plan")
+    # Check if user already used this coupon
+    already_used = await db.coupon_usage.find_one({"user_id": str(user["_id"]), "code": code})
+    if already_used:
+        raise HTTPException(status_code=400, detail="You have already used this coupon")
+    return {"valid": True, "code": code, "discount_percent": coupon["discount_percent"]}
+
+# Record coupon usage (called after successful payment)
+async def record_coupon_usage(user_id: str, code: str):
+    if not code:
+        return
+    await db.coupon_usage.insert_one({
+        "user_id": user_id, "code": code,
+        "used_at": datetime.now(timezone.utc).isoformat()
+    })
+    await db.coupons.update_one({"code": code}, {"$inc": {"used_count": 1}})
 
 # ==================== APP CONFIG ====================
 app.add_middleware(

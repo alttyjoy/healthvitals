@@ -26,7 +26,7 @@ export function getVitalStatus(key, value) {
 export function getStatusColor(status) {
   switch (status) {
     case 'normal': return '#10B981';
-    case 'warning': return '#E9C46A';
+    case 'warning': return '#ffff00';
     case 'critical': return '#EF4444';
     default: return '#64748B';
   }
