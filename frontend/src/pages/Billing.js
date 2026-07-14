@@ -27,7 +27,7 @@ export default function Billing() {
 
   // Handle PayU callback via URL params
   useEffect(() => {
-    const paymentStatus = searchParams.get('payment');
+    const paymentStatus = searchParams.get('payu');
     const txnid = searchParams.get('txnid');
     if (paymentStatus && txnid) {
       if (paymentStatus === 'success') {
@@ -88,7 +88,7 @@ export default function Billing() {
         order_id: orderData.order_id,
         handler: async (response) => {
           try {
-            await api.post('/razorpay/verify-payment', {
+            await api.post('/razorpay/verify', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
@@ -118,7 +118,7 @@ export default function Billing() {
       toast.error(formatApiError(err));
       setChanging(null);
     }
-  }, [user, refreshUser]);
+  }, [user, refreshUser, appliedCoupon]);
 
   const handlePayUPayment = useCallback(async (planKey) => {
     setChanging(planKey);
@@ -130,8 +130,8 @@ export default function Billing() {
       // PayU requires a form POST to the payment URL
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = data.payment_url;
-      Object.entries(data.form_data).forEach(([key, value]) => {
+      form.action = data.payu_url;
+      Object.entries(data.params).forEach(([key, value]) => {
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = key;
@@ -144,7 +144,7 @@ export default function Billing() {
       toast.error(formatApiError(err));
       setChanging(null);
     }
-  }, []);
+  }, [appliedCoupon]);
 
   const [paymentGateway, setPaymentGateway] = useState('razorpay');
 

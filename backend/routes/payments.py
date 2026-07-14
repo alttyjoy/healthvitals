@@ -143,12 +143,13 @@ async def payu_initiate(req: PayUInitRequest, request: Request):
     import secrets as sec
     txnid = f"VT{sec.token_hex(8).upper()}"
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+    backend_url = frontend_url  # Same domain, backend routes are at /api/*
     params = {
         "key": payu_key, "txnid": txnid,
         "amount": str(float(amount)), "productinfo": f"VitalTrack {plan['name']} Plan",
         "firstname": user.get("name", "User"), "email": user.get("email", ""),
-        "phone": "", "surl": f"{frontend_url}/billing?payu=success",
-        "furl": f"{frontend_url}/billing?payu=failure",
+        "phone": "", "surl": f"{backend_url}/api/payu/callback",
+        "furl": f"{backend_url}/api/payu/callback",
     }
     params["hash"] = generate_payu_hash(params, payu_salt)
     await db.payu_transactions.insert_one({
@@ -162,15 +163,17 @@ async def payu_initiate(req: PayUInitRequest, request: Request):
 
 @router.post("/payu/callback")
 async def payu_callback(request: Request):
+    from fastapi.responses import RedirectResponse
     form = await request.form()
     data = dict(form)
     payu_salt = os.environ.get("PAYU_MERCHANT_SALT", "")
     txnid = data.get("txnid", "")
     status = data.get("status", "")
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
     logger.info(f"PayU callback: txnid={txnid}, status={status}")
     tx = await db.payu_transactions.find_one({"txnid": txnid})
     if not tx:
-        raise HTTPException(status_code=400, detail="Transaction not found")
+        return RedirectResponse(url=f"{frontend_url}/billing?payu=failure", status_code=303)
     if status == "success":
         response_hash = data.get("hash", "")
         if not verify_payu_hash(response_hash, data, payu_salt):
@@ -191,6 +194,7 @@ async def payu_callback(request: Request):
             await record_coupon_usage(user_id, tx["coupon_code"].upper())
         await db.audit_logs.insert_one({"user_id": user_id, "action": "payment_success",
                                          "details": f"PayU: {plan_key}", "created_at": now})
+        return RedirectResponse(url=f"{frontend_url}/billing?payu=success", status_code=303)
     else:
         await db.payu_transactions.update_one({"txnid": txnid}, {"$set": {"status": "failed", "payu_data": data}})
-    return {"status": status, "txnid": txnid}
+        return RedirectResponse(url=f"{frontend_url}/billing?payu=failure", status_code=303)
