@@ -5,11 +5,30 @@ import hashlib
 import hmac
 import os
 
-from config import db, PLANS, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, razorpay_client, logger
+import config
+from config import db, PLANS, logger
 from models import RazorpayOrderRequest, RazorpayVerifyRequest, PlanChangeRequest, PayUInitRequest
 from utils import get_current_user, get_user_plan, record_coupon_usage
 
 router = APIRouter()
+
+async def _get_razorpay():
+    """Get Razorpay credentials: DB settings first, then .env fallback."""
+    settings = await db.settings.find_one({"key": "payment_gateways"})
+    key_id = (settings or {}).get("razorpay_key_id") or config.RAZORPAY_KEY_ID
+    key_secret = (settings or {}).get("razorpay_key_secret") or config.RAZORPAY_KEY_SECRET
+    if key_id and key_secret:
+        import razorpay
+        return key_id, key_secret, razorpay.Client(auth=(key_id, key_secret))
+    return "", "", None
+
+async def _get_payu():
+    """Get PayU credentials: DB settings first, then .env fallback."""
+    settings = await db.settings.find_one({"key": "payment_gateways"})
+    key = (settings or {}).get("payu_merchant_key") or os.environ.get("PAYU_MERCHANT_KEY", "")
+    salt = (settings or {}).get("payu_merchant_salt") or os.environ.get("PAYU_MERCHANT_SALT", "")
+    base_url = (settings or {}).get("payu_base_url") or os.environ.get("PAYU_BASE_URL", "https://test.payu.in/_payment")
+    return key, salt, base_url
 
 @router.get("/plans")
 async def get_plans():
@@ -42,8 +61,9 @@ async def change_subscription(req: PlanChangeRequest, request: Request):
 
 @router.post("/razorpay/create-order")
 async def razorpay_create_order(req: RazorpayOrderRequest, request: Request):
-    if not razorpay_client:
-        raise HTTPException(status_code=500, detail="Payment gateway not configured")
+    key_id, key_secret, rzp_client = await _get_razorpay()
+    if not rzp_client:
+        raise HTTPException(status_code=500, detail="Razorpay not configured. Add keys in Admin > Settings.")
     user = await get_current_user(request)
     plan = next((p for p in PLANS if p["key"] == req.plan_key), None)
     if not plan or plan["price"] == 0:
@@ -57,23 +77,24 @@ async def razorpay_create_order(req: RazorpayOrderRequest, request: Request):
     order_data = {"amount": amount * 100, "currency": "INR",
                   "notes": {"plan": req.plan_key, "user_id": str(user["_id"]), "cycle": req.billing_cycle, "coupon": req.coupon_code}}
     try:
-        order = razorpay_client.order.create(data=order_data)
+        order = rzp_client.order.create(data=order_data)
         return {"order_id": order["id"], "amount": amount, "currency": "INR",
-                "key_id": RAZORPAY_KEY_ID, "plan": plan}
+                "key_id": key_id, "plan": plan}
     except Exception as e:
         logger.error(f"Razorpay order error: {e}")
         raise HTTPException(status_code=500, detail="Failed to create payment order")
 
 @router.post("/razorpay/verify")
 async def razorpay_verify_payment(req: RazorpayVerifyRequest, request: Request):
-    if not razorpay_client:
-        raise HTTPException(status_code=500, detail="Payment gateway not configured")
+    key_id, key_secret, rzp_client = await _get_razorpay()
+    if not rzp_client:
+        raise HTTPException(status_code=500, detail="Razorpay not configured")
     user = await get_current_user(request)
     try:
         params = {"razorpay_order_id": req.razorpay_order_id,
                   "razorpay_payment_id": req.razorpay_payment_id,
                   "razorpay_signature": req.razorpay_signature}
-        razorpay_client.utility.verify_payment_signature(params)
+        rzp_client.utility.verify_payment_signature(params)
     except Exception:
         raise HTTPException(status_code=400, detail="Payment verification failed")
     plan = next((p for p in PLANS if p["key"] == req.plan_key), None)
@@ -104,8 +125,9 @@ async def razorpay_verify_payment(req: RazorpayVerifyRequest, request: Request):
 async def razorpay_webhook(request: Request):
     body = await request.body()
     sig = request.headers.get("X-Razorpay-Signature", "")
+    _, key_secret, rzp_client = await _get_razorpay()
     try:
-        razorpay_client.utility.verify_webhook_signature(body.decode(), sig, RAZORPAY_KEY_SECRET)
+        rzp_client.utility.verify_webhook_signature(body.decode(), sig, key_secret)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
     import json
@@ -130,10 +152,9 @@ async def payu_initiate(req: PayUInitRequest, request: Request):
     plan = next((p for p in PLANS if p["key"] == req.plan_key), None)
     if not plan or plan["price"] == 0:
         raise HTTPException(status_code=400, detail="Invalid plan for payment")
-    payu_key = os.environ.get("PAYU_MERCHANT_KEY", "")
-    payu_salt = os.environ.get("PAYU_MERCHANT_SALT", "")
+    payu_key, payu_salt, payu_url = await _get_payu()
     if not payu_key or not payu_salt:
-        raise HTTPException(status_code=500, detail="PayU not configured")
+        raise HTTPException(status_code=500, detail="PayU not configured. Add keys in Admin > Settings.")
     amount = plan["price"] if req.billing_cycle == "monthly" else plan["price_yearly"]
     if req.coupon_code:
         coupon = await db.coupons.find_one({"code": req.coupon_code.upper(), "active": {"$ne": False}})
@@ -158,7 +179,6 @@ async def payu_initiate(req: PayUInitRequest, request: Request):
         "coupon_code": req.coupon_code, "status": "initiated",
         "created_at": datetime.now(timezone.utc).isoformat()
     })
-    payu_url = os.environ.get("PAYU_BASE_URL", "https://test.payu.in/_payment")
     return {"payu_url": payu_url, "params": params}
 
 @router.post("/payu/callback")
@@ -166,7 +186,7 @@ async def payu_callback(request: Request):
     from fastapi.responses import RedirectResponse
     form = await request.form()
     data = dict(form)
-    payu_salt = os.environ.get("PAYU_MERCHANT_SALT", "")
+    _, payu_salt, _ = await _get_payu()
     txnid = data.get("txnid", "")
     status = data.get("status", "")
     frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")

@@ -7,7 +7,7 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 - **Frontend**: React + Tailwind CSS + Recharts + Shadcn/UI + Phosphor Icons + DOMPurify
 - **Backend**: FastAPI (Python) + MongoDB + APScheduler — Modular route architecture
 - **Auth**: JWT with httpOnly cookies, role-based access
-- **Payments**: Razorpay, PayU.In (live integration with test keys)
+- **Payments**: Razorpay, PayU.In (dynamic key loading from DB, .env fallback)
 - **Design**: Sky Blue (#0EA5E9) + Emerald (#10B981) palette, Outfit + Figtree fonts, dark mode support
 
 ## Backend Architecture (Decomposed)
@@ -18,45 +18,45 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 ├── models.py        # All Pydantic request models
 ├── utils.py         # Auth helpers, email, serialization, reminders
 ├── routes/
-│   ├── auth.py      # Auth: register, login, logout, me, refresh, forgot/reset password, profile
-│   ├── vitals.py    # Vitals: types, enabled, toggle, entries CRUD, charts (with stats+comparison), insights (with trends+comparison)
-│   ├── exports.py   # CSV & PDF export generation
+│   ├── auth.py      # Auth endpoints
+│   ├── vitals.py    # Vitals: types, toggle, entries, charts (stats+comparison), insights (trends+comparison)
+│   ├── exports.py   # CSV & PDF export
 │   ├── sharing.py   # Shared reports CRUD
 │   ├── referral.py  # Referral system
-│   ├── push.py      # Push notifications (VAPID, subscribe, status, admin send)
-│   ├── content.py   # Public content pages, translations, blog
-│   ├── payments.py  # Plans, subscription, Razorpay, PayU
-│   ├── admin.py     # Admin: dashboard, users CRUD, analytics, SMTP, reminders, content, coupons
-│   └── sync.py      # Device sync: register, pull, push, devices
+│   ├── push.py      # Push notifications
+│   ├── content.py   # Public content, translations, blog
+│   ├── payments.py  # Plans, subscription, Razorpay, PayU (dynamic DB key loading)
+│   ├── admin.py     # Admin: dashboard, users, analytics, SMTP, reminders, content, coupons, PAYMENT SETTINGS
+│   └── sync.py      # Device sync
 ```
 
 ## What's Been Implemented
 
-### Phase 1-5 (April 10-24, 2026)
+### Phase 1-7 (April-May 2026)
 - Full MVP, Auth, Dashboard, Tracker, Charts, Export, Plans, Admin
 - Razorpay, PayU.In, Dark mode, Multilingual, Shared reports, Referral System
-- Content Pages, Admin SMTP/Reminder config, Forgot Password, 8 FAQs
-- Responsive Landing, Admin User CRUD, Coupon System, Color Refresh
+- Content Pages, Admin SMTP/Reminder, Forgot Password, Coupons
+- XSS Fix, Code Quality, Color Refresh
 
-### Phase 7 — Code Quality Fixes (May 29, 2026)
-- XSS Fix (DOMPurify), Hardcoded Secrets moved to .env
-- React Hook Dependencies fixed, Empty Error Handlers filled
+### Phase 8 — Decomposition & Device Sync (May 2026)
+- Backend: 1954-line monolith → 10 route modules
+- Frontend: AdminPanel 839→200, Settings 427→340 lines
+- Push Notifications, CSV/PDF Export verified, Device Sync API
 
-### Phase 8 — Decomposition & Device Sync (May 29, 2026)
-- Backend decomposed: 1954-line monolith → 10 route modules
-- Frontend decomposed: AdminPanel 839→200 lines, Settings 427→340 lines
-- Push Notifications: VAPID key from API, toggle UI in Settings
-- CSV/PDF Export: Verified end-to-end
-- Device Sync API: register, pull, push, list, remove
+### Phase 9 — Advanced Analytics (May 2026)
+- Enhanced /api/insights with change_percent, previous_average, min, max, trend
+- Enhanced /api/charts with stats, previous_stats, compare toggle
+- Dashboard trend arrows, Charts period comparison overlay
 
-### Phase 9 — Advanced Analytics (May 29, 2026)
-- **Enhanced /api/insights**: Returns `change_percent`, `previous_average`, `min`, `max`, `trend` per vital (this week vs last week)
-- **Enhanced /api/charts/{vital_key}**: Returns `stats`, `previous_stats`, `change_percent`, `trend`; supports `compare=true` to get `previous_entries` for overlay
-- **Dashboard trend arrows**: Color-coded (context-aware: rising=bad for BP/glucose, good for sleep/activity), % change, prev avg, min-max range per insight
-- **Dashboard vitals sidebar**: Inline trend arrows with % change next to today's value
-- **Charts Compare toggle**: Overlays previous period as dashed ghost line on chart
-- **Charts enhanced stat cards**: Current + previous values with colored % change pill badges
-- **Trend color logic**: Per-vital direction mapping (RISING_IS_GOOD set for sleep, activity, hydration, blood_oxygen)
+### Phase 10 — Security & Payment Fixes (July-Aug 2026)
+- **229→0 npm vulnerabilities** fixed via yarn resolutions (7 low/moderate dev-only remain)
+- **4 payment gateway bugs fixed**: PayU env var mismatch, Razorpay verify endpoint, PayU response field names, PayU callback flow
+- **Admin Payment Settings UI**: New section in Admin > Settings to manage Razorpay/PayU keys from UI
+  - Secrets masked on read (********), preserved on write if unchanged
+  - Dynamic key loading: DB settings → .env fallback
+  - "Configured" badges check both key+secret present
+  - Eye/EyeSlash toggle for secret visibility
+  - Razorpay client auto-reinitialized on save
 
 ## Pricing (INR)
 - Free: ₹0 (2 vitals, 7-day history, CSV only)
@@ -73,4 +73,3 @@ SaaS platform for daily tracking, monitoring, visualizing, exporting, and managi
 ### P3
 - [ ] Mobile app API hardening (React Native / Flutter)
 - [ ] Migrate to FastAPI lifespan context manager
-- [ ] Replace browser-default time inputs with shadcn components

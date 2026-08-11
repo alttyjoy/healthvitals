@@ -296,3 +296,67 @@ async def validate_coupon(request: Request):
 
 # Import get_current_user for coupon validation
 from utils import get_current_user
+
+
+# ==================== PAYMENT GATEWAY SETTINGS ====================
+MASK = "********"
+
+@router.get("/admin/payment-settings")
+async def get_payment_settings(request: Request):
+    await get_admin_user(request)
+    settings = await db.settings.find_one({"key": "payment_gateways"}, {"_id": 0})
+    if not settings:
+        # Return .env values as defaults (masked)
+        import os
+        return {
+            "key": "payment_gateways",
+            "razorpay_key_id": os.environ.get("RAZORPAY_KEY_ID", ""),
+            "razorpay_key_secret": MASK if os.environ.get("RAZORPAY_KEY_SECRET") else "",
+            "payu_merchant_key": os.environ.get("PAYU_MERCHANT_KEY", ""),
+            "payu_merchant_salt": MASK if os.environ.get("PAYU_MERCHANT_SALT") else "",
+            "payu_base_url": os.environ.get("PAYU_BASE_URL", "https://test.payu.in/_payment"),
+            "razorpay_configured": bool(os.environ.get("RAZORPAY_KEY_ID") and os.environ.get("RAZORPAY_KEY_SECRET")),
+            "payu_configured": bool(os.environ.get("PAYU_MERCHANT_KEY") and os.environ.get("PAYU_MERCHANT_SALT")),
+        }
+    result = dict(settings)
+    # Always return all fields consistently
+    result.setdefault("razorpay_key_id", "")
+    result.setdefault("payu_merchant_key", "")
+    result.setdefault("payu_base_url", "https://test.payu.in/_payment")
+    result["razorpay_key_secret"] = MASK if result.get("razorpay_key_secret") else ""
+    result["payu_merchant_salt"] = MASK if result.get("payu_merchant_salt") else ""
+    result["razorpay_configured"] = bool(result.get("razorpay_key_id") and settings.get("razorpay_key_secret"))
+    result["payu_configured"] = bool(result.get("payu_merchant_key") and settings.get("payu_merchant_salt"))
+    return result
+
+@router.put("/admin/payment-settings")
+async def update_payment_settings(request: Request):
+    admin = await get_admin_user(request)
+    body = await request.json()
+    current = await db.settings.find_one({"key": "payment_gateways"})
+    updates = {"key": "payment_gateways", "updated_at": datetime.now(timezone.utc).isoformat()}
+    # Only update fields that are provided and not the mask
+    for field in ["razorpay_key_id", "razorpay_key_secret", "payu_merchant_key", "payu_merchant_salt", "payu_base_url"]:
+        val = body.get(field)
+        if val is not None and val != MASK:
+            updates[field] = val
+        elif current and field in current:
+            updates[field] = current[field]
+    await db.settings.update_one({"key": "payment_gateways"}, {"$set": updates}, upsert=True)
+    # Reinitialize Razorpay client if keys changed
+    rzp_id = updates.get("razorpay_key_id", "")
+    rzp_secret = updates.get("razorpay_key_secret", "")
+    if rzp_id and rzp_secret:
+        import config
+        import razorpay
+        config.RAZORPAY_KEY_ID = rzp_id
+        config.RAZORPAY_KEY_SECRET = rzp_secret
+        config.razorpay_client = razorpay.Client(auth=(rzp_id, rzp_secret))
+        logger.info("Razorpay client reinitialized from admin settings")
+    await db.audit_logs.insert_one({
+        "user_id": str(admin["_id"]),
+        "action": "payment_settings_updated",
+        "details": "Payment gateway keys updated via admin panel",
+        "created_at": datetime.now(timezone.utc)
+    })
+    return {"message": "Payment settings saved"}
