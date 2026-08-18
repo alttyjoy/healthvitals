@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Envelope, Bell, Clock, CreditCard, Eye, EyeSlash } from '@phosphor-icons/react';
+import { Envelope, Bell, Clock, CreditCard, Eye, EyeSlash, TestTube, Lightning } from '@phosphor-icons/react';
 
 export function AdminSettings() {
   const [smtp, setSmtp] = useState({ smtp_host: '', smtp_port: 587, smtp_username: '', smtp_password: '', smtp_from_email: '', smtp_from_name: '', smtp_use_tls: true });
@@ -14,13 +14,13 @@ export function AdminSettings() {
   const [reminderSettings, setReminderSettings] = useState({ enabled: false, time: '09:00' });
   const [reminderSaving, setReminderSaving] = useState(false);
   const [payment, setPayment] = useState({
-    razorpay_key_id: '', razorpay_key_secret: '',
-    payu_merchant_key: '', payu_merchant_salt: '',
-    payu_base_url: 'https://test.payu.in/_payment',
+    mode: 'test',
+    test: { razorpay_key_id: '', razorpay_key_secret: '', payu_merchant_key: '', payu_merchant_salt: '' },
+    live: { razorpay_key_id: '', razorpay_key_secret: '', payu_merchant_key: '', payu_merchant_salt: '' },
     razorpay_configured: false, payu_configured: false,
   });
   const [paymentSaving, setPaymentSaving] = useState(false);
-  const [showSecrets, setShowSecrets] = useState({ rzpSecret: false, payuSalt: false });
+  const [showSecrets, setShowSecrets] = useState({});
 
   useEffect(() => {
     api.get('/admin/smtp-settings').then(({ data }) => setSmtp(prev => ({ ...prev, ...data }))).catch(e => console.error('SMTP load:', e?.message));
@@ -57,15 +57,57 @@ export function AdminSettings() {
     finally { setPaymentSaving(false); }
   };
 
+  const mode = payment.mode || 'test';
+  const isLive = mode === 'live';
+  const activeKeys = payment[mode] || {};
+
+  const updateKey = (field, value) => {
+    setPayment(prev => ({
+      ...prev,
+      [mode]: { ...(prev[mode] || {}), [field]: value }
+    }));
+  };
+
+  const toggleSecret = (key) => setShowSecrets(s => ({ ...s, [key]: !s[key] }));
+
   return (
     <div className="space-y-6">
       {/* Payment Gateway Settings */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6" data-testid="admin-payment-settings">
-        <div className="flex items-center gap-3 mb-5">
-          <CreditCard weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
-          <div>
-            <h3 className="text-base font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Payment Gateways</h3>
-            <p className="text-xs text-[#64748B]">Configure Razorpay and PayU.In API keys for accepting payments</p>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <CreditCard weight="duotone" className="w-5 h-5 text-[#0EA5E9]" />
+            <div>
+              <h3 className="text-base font-medium text-[#0F172A]" style={{ fontFamily: 'Outfit' }}>Payment Gateways</h3>
+              <p className="text-xs text-[#64748B]">Configure Razorpay and PayU.In API keys</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Test/Live Mode Toggle */}
+        <div className="flex items-center gap-3 mb-6 p-3 rounded-xl border border-dashed" style={{ borderColor: isLive ? '#EF4444' : '#0EA5E9', backgroundColor: isLive ? '#FEF2F2' : '#F0F9FF' }} data-testid="payment-mode-toggle">
+          <div className="flex items-center gap-2 flex-1">
+            {isLive
+              ? <Lightning weight="fill" className="w-4 h-4 text-red-500" />
+              : <TestTube weight="duotone" className="w-4 h-4 text-[#0EA5E9]" />
+            }
+            <div>
+              <p className="text-sm font-medium" style={{ color: isLive ? '#DC2626' : '#0369A1' }}>
+                {isLive ? 'Live Mode' : 'Test Mode'}
+              </p>
+              <p className="text-[10px]" style={{ color: isLive ? '#EF4444' : '#64748B' }}>
+                {isLive ? 'Real payments will be processed' : 'Using sandbox/test environment'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#64748B]">Test</span>
+            <Switch
+              checked={isLive}
+              onCheckedChange={(v) => setPayment(prev => ({ ...prev, mode: v ? 'live' : 'test' }))}
+              data-testid="payment-mode-switch"
+            />
+            <span className="text-xs font-medium" style={{ color: isLive ? '#DC2626' : '#64748B' }}>Live</span>
           </div>
         </div>
 
@@ -76,20 +118,22 @@ export function AdminSettings() {
             <Badge className={`text-[10px] px-1.5 py-0 border-0 ${payment.razorpay_configured ? 'bg-emerald-50 text-emerald-600' : 'bg-[#F1F5F9] text-[#94A3B8]'}`}>
               {payment.razorpay_configured ? 'Configured' : 'Not set'}
             </Badge>
+            <Badge className={`text-[10px] px-1.5 py-0 border-0 ${isLive ? 'bg-red-50 text-red-500' : 'bg-sky-50 text-sky-600'}`}>
+              {isLive ? 'Live Keys' : 'Test Keys'}
+            </Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-[#0F172A]">Key ID</Label>
-              <Input value={payment.razorpay_key_id || ''} onChange={e => setPayment(s => ({ ...s, razorpay_key_id: e.target.value }))}
-                placeholder="rzp_live_xxxxxxxx" className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC] font-mono text-sm" data-testid="razorpay-key-id" />
+              <Input value={activeKeys.razorpay_key_id || ''} onChange={e => updateKey('razorpay_key_id', e.target.value)}
+                placeholder={isLive ? 'rzp_live_xxxxxxxx' : 'rzp_test_xxxxxxxx'} className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC] font-mono text-sm" data-testid="razorpay-key-id" />
             </div>
             <div>
               <Label className="text-sm text-[#0F172A]">Key Secret</Label>
               <div className="relative mt-1.5">
-                <Input type={showSecrets.rzpSecret ? 'text' : 'password'} value={payment.razorpay_key_secret || ''} onChange={e => setPayment(s => ({ ...s, razorpay_key_secret: e.target.value }))}
+                <Input type={showSecrets.rzpSecret ? 'text' : 'password'} value={activeKeys.razorpay_key_secret || ''} onChange={e => updateKey('razorpay_key_secret', e.target.value)}
                   placeholder="Enter secret key" className="rounded-xl border-[#E2E8F0] bg-[#F8FAFC] font-mono text-sm pr-10" data-testid="razorpay-key-secret" />
-                <button type="button" onClick={() => setShowSecrets(s => ({ ...s, rzpSecret: !s.rzpSecret }))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B]">
+                <button type="button" onClick={() => toggleSecret('rzpSecret')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B]">
                   {showSecrets.rzpSecret ? <EyeSlash className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -104,31 +148,30 @@ export function AdminSettings() {
             <Badge className={`text-[10px] px-1.5 py-0 border-0 ${payment.payu_configured ? 'bg-emerald-50 text-emerald-600' : 'bg-[#F1F5F9] text-[#94A3B8]'}`}>
               {payment.payu_configured ? 'Configured' : 'Not set'}
             </Badge>
+            <Badge className={`text-[10px] px-1.5 py-0 border-0 ${isLive ? 'bg-red-50 text-red-500' : 'bg-sky-50 text-sky-600'}`}>
+              {isLive ? 'Live Keys' : 'Test Keys'}
+            </Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm text-[#0F172A]">Merchant Key</Label>
-              <Input value={payment.payu_merchant_key || ''} onChange={e => setPayment(s => ({ ...s, payu_merchant_key: e.target.value }))}
+              <Input value={activeKeys.payu_merchant_key || ''} onChange={e => updateKey('payu_merchant_key', e.target.value)}
                 placeholder="Your merchant key" className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC] font-mono text-sm" data-testid="payu-merchant-key" />
             </div>
             <div>
               <Label className="text-sm text-[#0F172A]">Merchant Salt</Label>
               <div className="relative mt-1.5">
-                <Input type={showSecrets.payuSalt ? 'text' : 'password'} value={payment.payu_merchant_salt || ''} onChange={e => setPayment(s => ({ ...s, payu_merchant_salt: e.target.value }))}
+                <Input type={showSecrets.payuSalt ? 'text' : 'password'} value={activeKeys.payu_merchant_salt || ''} onChange={e => updateKey('payu_merchant_salt', e.target.value)}
                   placeholder="Enter salt key" className="rounded-xl border-[#E2E8F0] bg-[#F8FAFC] font-mono text-sm pr-10" data-testid="payu-merchant-salt" />
-                <button type="button" onClick={() => setShowSecrets(s => ({ ...s, payuSalt: !s.payuSalt }))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B]">
+                <button type="button" onClick={() => toggleSecret('payuSalt')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B]">
                   {showSecrets.payuSalt ? <EyeSlash className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
-            <div className="md:col-span-2">
-              <Label className="text-sm text-[#0F172A]">PayU Base URL</Label>
-              <Input value={payment.payu_base_url || ''} onChange={e => setPayment(s => ({ ...s, payu_base_url: e.target.value }))}
-                placeholder="https://secure.payu.in/_payment" className="mt-1.5 rounded-xl border-[#E2E8F0] bg-[#F8FAFC] text-sm" data-testid="payu-base-url" />
-              <p className="text-[10px] text-[#94A3B8] mt-1">Test: https://test.payu.in/_payment &nbsp;|&nbsp; Live: https://secure.payu.in/_payment</p>
-            </div>
           </div>
+          <p className="text-[10px] text-[#94A3B8] mt-2">
+            PayU URL auto-selected: {isLive ? 'https://secure.payu.in/_payment' : 'https://test.payu.in/_payment'}
+          </p>
         </div>
 
         <div className="flex items-center justify-end pt-4 border-t border-[#E2E8F0]">

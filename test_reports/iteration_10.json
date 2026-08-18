@@ -1,0 +1,58 @@
+{
+  "summary": "Iteration 10: Verified Test/Live mode toggle in Payment Gateway settings and new Payment History table. Backend: 11/11 pytest passed — GET returns mode + test/live buckets + configured flags (payu_base_url correctly removed), PUT saves both buckets independently, mode-switching persists, MASK-preserving behavior works for both buckets, PayU initiate returns https://secure.payu.in/_payment when live and https://test.payu.in/_payment when test, /admin/payments returns normalized list from both payments + payu_transactions collections. Frontend: Admin Panel now has 7 tabs including new Payments tab. Payment History renders with expected columns (User/Gateway/Plan/Amount/Order ID/Status/Date), gateway/status badges styled correctly, 6 PayU transactions shown (3 seed + 3 created during backend tests). Settings tab shows Test Mode (blue) / Live Mode (red) toggle with correct copy; switching flips key values (test key rzp_test_SY4wkkjcQo4e5i vs empty live key) and PayU URL hint text auto-updates between test.payu.in and secure.payu.in.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/admin/payment-settings", "issue": "razorpay_configured / payu_configured are computed from active mode's key_id AND raw db secret. Works, but is inconsistent: when the DB has NO secret at all but the mode has a key_id, badge shows 'Configured' from the response side. Consider computing based on (key_id AND secret) explicitly."},
+      {"endpoint": "N/A - stale test file", "issue": "Existing /app/backend/tests/test_payment_settings.py from iteration 9 asserts on 'payu_base_url' field which was intentionally removed. Running that file will fail. Suggest deleting or updating it."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "GET /api/admin/payment-settings returns mode + nested test/live buckets, secrets masked, payu_base_url absent",
+    "PUT /api/admin/payment-settings saves both test and live buckets independently",
+    "PUT with MASK for secret preserves existing secret",
+    "PUT with mode='live' switches active mode; subsequent GET reflects new mode",
+    "POST /api/payu/initiate uses secure.payu.in in live mode with live merchant key",
+    "POST /api/payu/initiate uses test.payu.in in test mode with test merchant key",
+    "GET /api/admin/payments returns normalized transactions with all required fields; >=3 PayU tx present",
+    "GET /api/admin/payments supports skip/limit pagination",
+    "Auth: both endpoints reject unauthenticated calls (401/403)",
+    "UI: Admin Panel shows 7 tabs including Payments and Settings",
+    "UI: Payments tab renders PaymentHistory with columns User/Gateway/Plan/Amount/Order ID/Status/Date and 6 tx rows",
+    "UI: Gateway badge (PayU=violet) and status badge (Initiated=amber) styled correctly",
+    "UI: Settings > Payment Gateway shows Test Mode label (blue) with 'Using sandbox/test environment' and Test/Live toggle",
+    "UI: Toggling to Live shows red 'Live Mode' + 'Real payments will be processed', Razorpay key ID field switches from rzp_test_SY4wkkjcQo4e5i -> empty (live bucket)",
+    "UI: PayU URL hint auto-updates between https://test.payu.in/_payment and https://secure.payu.in/_payment based on mode",
+    "UI: Save Payment Settings button triggers PUT successfully"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iteration10_payment_mode.py",
+    "/app/test_reports/pytest/pytest_results_iteration10.xml"
+  ],
+  "action_items": [
+    "Delete or refactor stale /app/backend/tests/test_payment_settings.py (asserts removed payu_base_url field)",
+    "(Optional) Also expose 'amount' for Razorpay transactions in /admin/payments (currently returns None because payments collection doesn't store amount at verify time)"
+  ],
+  "critical_code_review_comments": [
+    "routes/admin.py:390 admin_payment_history: rzp_payments and payu_payments are each fetched with `skip/limit` independently, then concatenated and re-sliced. Pagination is therefore incorrect when total > limit — page 2 will re-fetch first `limit` docs from each collection again. Should either aggregate via a $unionWith pipeline or track offsets separately per collection.",
+    "routes/admin.py:412 razorpay tx status hard-coded to 'success' regardless of actual payment record state; if a Razorpay order fails after being recorded, history will still show 'success'.",
+    "routes/admin.py:400 get_user_email raises for invalid ObjectId strings (e.g., empty user_id). Wrap in try/except or validate before ObjectId(uid).",
+    "routes/payments.py:42 mode is re-read from `settings or {}` but settings was already checked truthy above — small duplicated lookup; simple to consolidate.",
+    "AdminSettings.js still >600 lines with 3 sections (Payment / Reminders / SMTP). Consider splitting into subcomponents for maintainability."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration10_payment_mode.py"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (all critical UI flows verified)"},
+  "test_credentials": {"admin": "admin@example.com / admin123"},
+  "seed_data_creation": "Tests create/restore payment_gateways settings doc. Final test restores env-matching test-mode credentials. 3 additional PayU test transactions were inserted into payu_transactions collection during backend tests (via /payu/initiate).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Iteration 10 features fully working. New API contract: GET /admin/payment-settings returns {mode, test:{...}, live:{...}, razorpay_configured, payu_configured}, no more payu_base_url. PUT accepts same nested shape. /admin/payments aggregates Razorpay + PayU transactions with normalized keys (id, gateway, user_email, plan, amount, order_id, status, created_at). Note pagination correctness issue flagged. Frontend testids: payment-mode-toggle, payment-mode-switch, payment-history, tx-row-{id}, refresh-payments-btn, payments-prev-page, payments-next-page.",
+  "rca_of_the_issue": "N/A - no failures"
+}

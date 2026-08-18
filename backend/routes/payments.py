@@ -13,21 +13,33 @@ from utils import get_current_user, get_user_plan, record_coupon_usage
 router = APIRouter()
 
 async def _get_razorpay():
-    """Get Razorpay credentials: DB settings first, then .env fallback."""
+    """Get Razorpay credentials: DB settings (mode-aware) first, then .env fallback."""
     settings = await db.settings.find_one({"key": "payment_gateways"})
-    key_id = (settings or {}).get("razorpay_key_id") or config.RAZORPAY_KEY_ID
-    key_secret = (settings or {}).get("razorpay_key_secret") or config.RAZORPAY_KEY_SECRET
+    if settings:
+        mode = settings.get("mode", "test")
+        bucket = settings.get(mode, settings)
+        key_id = bucket.get("razorpay_key_id", "")
+        key_secret = bucket.get("razorpay_key_secret", "")
+    else:
+        key_id = config.RAZORPAY_KEY_ID
+        key_secret = config.RAZORPAY_KEY_SECRET
     if key_id and key_secret:
         import razorpay
         return key_id, key_secret, razorpay.Client(auth=(key_id, key_secret))
     return "", "", None
 
 async def _get_payu():
-    """Get PayU credentials: DB settings first, then .env fallback."""
+    """Get PayU credentials: DB settings (mode-aware) first, then .env fallback."""
     settings = await db.settings.find_one({"key": "payment_gateways"})
-    key = (settings or {}).get("payu_merchant_key") or os.environ.get("PAYU_MERCHANT_KEY", "")
-    salt = (settings or {}).get("payu_merchant_salt") or os.environ.get("PAYU_MERCHANT_SALT", "")
-    base_url = (settings or {}).get("payu_base_url") or os.environ.get("PAYU_BASE_URL", "https://test.payu.in/_payment")
+    if settings:
+        mode = settings.get("mode", "test")
+        bucket = settings.get(mode, settings)
+        key = bucket.get("payu_merchant_key", "")
+        salt = bucket.get("payu_merchant_salt", "")
+    else:
+        key = os.environ.get("PAYU_MERCHANT_KEY", "")
+        salt = os.environ.get("PAYU_MERCHANT_SALT", "")
+    base_url = "https://test.payu.in/_payment" if (settings or {}).get("mode", "test") == "test" else "https://secure.payu.in/_payment"
     return key, salt, base_url
 
 @router.get("/plans")

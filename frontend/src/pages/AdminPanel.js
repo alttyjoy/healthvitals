@@ -7,12 +7,13 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
-  Users, ChartLine, CreditCard, FileArrowDown, ShieldCheck
+  Users, ChartLine, CreditCard, FileArrowDown, ShieldCheck, Receipt
 } from '@phosphor-icons/react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { CouponManagement } from '@/components/admin/CouponManagement';
 import { AdminSettings } from '@/components/admin/AdminSettings';
 import { ContentManagement } from '@/components/admin/ContentManagement';
+import { PaymentHistory } from '@/components/admin/PaymentHistory';
 
 export default function AdminPanel() {
   const [tab, setTab] = useState('overview');
@@ -68,6 +69,7 @@ export default function AdminPanel() {
           <TabsTrigger value="analytics" data-testid="admin-tab-analytics" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Analytics</TabsTrigger>
           <TabsTrigger value="content" data-testid="admin-tab-content" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Content</TabsTrigger>
           <TabsTrigger value="coupons" data-testid="admin-tab-coupons" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Coupons</TabsTrigger>
+          <TabsTrigger value="payments" data-testid="admin-tab-payments" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Payments</TabsTrigger>
           <TabsTrigger value="settings" data-testid="admin-tab-settings" className="rounded-lg text-xs sm:text-sm data-[state=active]:bg-[#0EA5E9] data-[state=active]:text-white">Settings</TabsTrigger>
         </TabsList>
 
@@ -163,7 +165,12 @@ export default function AdminPanel() {
           <CouponManagement />
         </TabsContent>
 
-        {/* Settings (SMTP + Reminders) */}
+        {/* Payment History */}
+        <TabsContent value="payments" className="mt-4">
+          <PaymentHistory />
+        </TabsContent>
+
+        {/* Settings (Payment Keys + SMTP + Reminders) */}
         <TabsContent value="settings" className="mt-4">
           <AdminSettings />
         </TabsContent>

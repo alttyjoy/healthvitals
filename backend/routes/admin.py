@@ -300,63 +300,128 @@ from utils import get_current_user
 
 # ==================== PAYMENT GATEWAY SETTINGS ====================
 MASK = "********"
+PAYMENT_FIELDS = ["razorpay_key_id", "razorpay_key_secret", "payu_merchant_key", "payu_merchant_salt"]
 
 @router.get("/admin/payment-settings")
 async def get_payment_settings(request: Request):
     await get_admin_user(request)
     settings = await db.settings.find_one({"key": "payment_gateways"}, {"_id": 0})
     if not settings:
-        # Return .env values as defaults (masked)
         import os
+        mode = "test"
         return {
-            "key": "payment_gateways",
-            "razorpay_key_id": os.environ.get("RAZORPAY_KEY_ID", ""),
-            "razorpay_key_secret": MASK if os.environ.get("RAZORPAY_KEY_SECRET") else "",
-            "payu_merchant_key": os.environ.get("PAYU_MERCHANT_KEY", ""),
-            "payu_merchant_salt": MASK if os.environ.get("PAYU_MERCHANT_SALT") else "",
-            "payu_base_url": os.environ.get("PAYU_BASE_URL", "https://test.payu.in/_payment"),
+            "key": "payment_gateways", "mode": mode,
+            "test": {
+                "razorpay_key_id": os.environ.get("RAZORPAY_KEY_ID", ""),
+                "razorpay_key_secret": MASK if os.environ.get("RAZORPAY_KEY_SECRET") else "",
+                "payu_merchant_key": os.environ.get("PAYU_MERCHANT_KEY", ""),
+                "payu_merchant_salt": MASK if os.environ.get("PAYU_MERCHANT_SALT") else "",
+            },
+            "live": {"razorpay_key_id": "", "razorpay_key_secret": "", "payu_merchant_key": "", "payu_merchant_salt": ""},
             "razorpay_configured": bool(os.environ.get("RAZORPAY_KEY_ID") and os.environ.get("RAZORPAY_KEY_SECRET")),
             "payu_configured": bool(os.environ.get("PAYU_MERCHANT_KEY") and os.environ.get("PAYU_MERCHANT_SALT")),
         }
     result = dict(settings)
-    # Always return all fields consistently
-    result.setdefault("razorpay_key_id", "")
-    result.setdefault("payu_merchant_key", "")
-    result.setdefault("payu_base_url", "https://test.payu.in/_payment")
-    result["razorpay_key_secret"] = MASK if result.get("razorpay_key_secret") else ""
-    result["payu_merchant_salt"] = MASK if result.get("payu_merchant_salt") else ""
-    result["razorpay_configured"] = bool(result.get("razorpay_key_id") and settings.get("razorpay_key_secret"))
-    result["payu_configured"] = bool(result.get("payu_merchant_key") and settings.get("payu_merchant_salt"))
+    mode = result.get("mode", "test")
+    # Migrate flat keys to nested structure if needed
+    if "test" not in result:
+        result["test"] = {f: result.pop(f, "") for f in PAYMENT_FIELDS}
+        result["live"] = {f: "" for f in PAYMENT_FIELDS}
+    # Mask secrets in both modes
+    for m in ["test", "live"]:
+        bucket = result.get(m, {})
+        bucket.setdefault("razorpay_key_id", "")
+        bucket.setdefault("payu_merchant_key", "")
+        bucket["razorpay_key_secret"] = MASK if bucket.get("razorpay_key_secret") else ""
+        bucket["payu_merchant_salt"] = MASK if bucket.get("payu_merchant_salt") else ""
+        result[m] = bucket
+    active = result.get(mode, {})
+    raw_settings = settings.get(mode, settings.get("test", {}))
+    result["razorpay_configured"] = bool(active.get("razorpay_key_id") and raw_settings.get("razorpay_key_secret"))
+    result["payu_configured"] = bool(active.get("payu_merchant_key") and raw_settings.get("payu_merchant_salt"))
+    result["mode"] = mode
+    result.pop("payu_base_url", None)
     return result
 
 @router.put("/admin/payment-settings")
 async def update_payment_settings(request: Request):
     admin = await get_admin_user(request)
     body = await request.json()
-    current = await db.settings.find_one({"key": "payment_gateways"})
-    updates = {"key": "payment_gateways", "updated_at": datetime.now(timezone.utc).isoformat()}
-    # Only update fields that are provided and not the mask
-    for field in ["razorpay_key_id", "razorpay_key_secret", "payu_merchant_key", "payu_merchant_salt", "payu_base_url"]:
-        val = body.get(field)
-        if val is not None and val != MASK:
-            updates[field] = val
-        elif current and field in current:
-            updates[field] = current[field]
+    current = await db.settings.find_one({"key": "payment_gateways"}) or {}
+    mode = body.get("mode", current.get("mode", "test"))
+    updates = {"key": "payment_gateways", "mode": mode, "updated_at": datetime.now(timezone.utc).isoformat()}
+    # Update keys for each mode bucket
+    for m in ["test", "live"]:
+        incoming = body.get(m, {})
+        existing = current.get(m, {})
+        # Fallback: if no nested bucket exists yet, check flat keys (migration from old format)
+        if not existing and m == "test":
+            existing = {f: current.get(f, "") for f in PAYMENT_FIELDS}
+        bucket = {}
+        for field in PAYMENT_FIELDS:
+            val = incoming.get(field)
+            if val is not None and val != MASK:
+                bucket[field] = val
+            else:
+                bucket[field] = existing.get(field, "")
+        updates[m] = bucket
     await db.settings.update_one({"key": "payment_gateways"}, {"$set": updates}, upsert=True)
-    # Reinitialize Razorpay client if keys changed
-    rzp_id = updates.get("razorpay_key_id", "")
-    rzp_secret = updates.get("razorpay_key_secret", "")
+    # Reinitialize Razorpay with active mode keys
+    active = updates.get(mode, {})
+    rzp_id = active.get("razorpay_key_id", "")
+    rzp_secret = active.get("razorpay_key_secret", "")
     if rzp_id and rzp_secret:
         import config
         import razorpay
         config.RAZORPAY_KEY_ID = rzp_id
         config.RAZORPAY_KEY_SECRET = rzp_secret
         config.razorpay_client = razorpay.Client(auth=(rzp_id, rzp_secret))
-        logger.info("Razorpay client reinitialized from admin settings")
+        logger.info(f"Razorpay client reinitialized ({mode} mode)")
     await db.audit_logs.insert_one({
         "user_id": str(admin["_id"]),
         "action": "payment_settings_updated",
-        "details": "Payment gateway keys updated via admin panel",
+        "details": f"Payment gateway keys updated (mode: {mode})",
         "created_at": datetime.now(timezone.utc)
     })
     return {"message": "Payment settings saved"}
+
+# ==================== PAYMENT HISTORY ====================
+@router.get("/admin/payments")
+async def admin_payment_history(request: Request, skip: int = 0, limit: int = 50):
+    await get_admin_user(request)
+    total_rzp = await db.payments.count_documents({})
+    total_payu = await db.payu_transactions.count_documents({})
+    total = total_rzp + total_payu
+    # Use $unionWith aggregation for correct pagination
+    pipeline = [
+        {"$project": {"_id": 1, "user_id": 1, "gateway": {"$literal": "Razorpay"}, "plan": 1, "amount": 1, "order_id": 1, "payment_id": 1, "status": {"$ifNull": ["$status", "success"]}, "created_at": 1}},
+        {"$unionWith": {"coll": "payu_transactions", "pipeline": [
+            {"$project": {"_id": 1, "user_id": 1, "gateway": {"$literal": "PayU"}, "plan": 1, "amount": 1, "order_id": "$txnid", "payment_id": {"$literal": ""}, "status": {"$ifNull": ["$status", "initiated"]}, "created_at": 1}}
+        ]}},
+        {"$sort": {"created_at": -1}},
+        {"$skip": skip},
+        {"$limit": limit}
+    ]
+    results = await db.payments.aggregate(pipeline).to_list(limit)
+    user_cache = {}
+    async def get_user_info(uid):
+        if not uid or uid in user_cache:
+            return user_cache.get(uid, {"email": "Unknown", "name": ""})
+        try:
+            u = await db.users.find_one({"_id": ObjectId(uid)}, {"email": 1, "name": 1})
+        except Exception:
+            u = None
+        info = {"email": u.get("email", "Unknown") if u else "Deleted User", "name": u.get("name", "") if u else ""}
+        user_cache[uid] = info
+        return info
+    transactions = []
+    for r in results:
+        u = await get_user_info(r.get("user_id", ""))
+        transactions.append({
+            "id": str(r["_id"]), "gateway": r.get("gateway", ""),
+            "user_email": u["email"], "user_name": u["name"],
+            "plan": r.get("plan", ""), "amount": r.get("amount"),
+            "order_id": r.get("order_id", ""), "payment_id": r.get("payment_id", ""),
+            "status": r.get("status", ""), "created_at": r.get("created_at", ""),
+        })
+    return {"transactions": transactions, "total": total}
