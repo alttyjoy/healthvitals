@@ -21,6 +21,7 @@ from routes.content import router as content_router
 from routes.payments import router as payments_router
 from routes.admin import router as admin_router
 from routes.sync import router as sync_router
+from routes.google_auth import router as google_auth_router
 
 # Include all routers
 api_router.include_router(auth_router)
@@ -33,6 +34,7 @@ api_router.include_router(content_router)
 api_router.include_router(payments_router)
 api_router.include_router(admin_router)
 api_router.include_router(sync_router)
+api_router.include_router(google_auth_router)
 
 
 @app.on_event("startup")
@@ -114,13 +116,16 @@ async def shutdown():
 
 
 # CORS
+_frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+_origins = list(set(filter(None, [
+    _frontend_url,
+    "http://localhost:3000",
+    "https://wellness-log-105.preview.emergentagent.com",
+])))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        os.environ.get("FRONTEND_URL", "http://localhost:3000"),
-        "http://localhost:3000",
-        "https://wellness-log-105.preview.emergentagent.com"
-    ],
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,0 +1,35 @@
+{
+  "summary": "Tested iteration 11 auth fixes: HTTPS cookie flags (Secure/SameSite=None) and Google OAuth via Emergent Auth. Backend: 7/8 pytest passed. Frontend: all UI flows verified via Playwright. Email/password login works and redirects to /admin for super_admin. Cookies correctly set with secure=True, sameSite=None, httpOnly=True on HTTPS. Google buttons render on both Login and Register with correct dividers. session_id hash routes to AuthCallback, which posts to /api/auth/google/callback, handles failure, redirects to /login with error state. Google button navigates to auth.emergentagent.com with dynamic redirect URL. Backend endpoint /api/auth/google/callback correctly returns 400 for empty session_id and 401 for invalid Emergent session_id.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "OPTIONS /api/auth/login", "issue": "Preflight returns Access-Control-Allow-Origin='*' instead of specific origin - appears to originate from k8s ingress layer, not FastAPI CORS middleware. Not blocking (browser flows work with credentials in practice for this env), but worth noting for Hostinger deployment where the k8s layer is absent."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_auth_google_login.py",
+    "/app/test_reports/pytest/pytest_results_iteration11.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "google_auth.py stores 'emergent_session_token' in db.google_sessions but there is no code path that actually validates this token elsewhere. If not needed, remove; if intended for cookie-based session auth alongside JWT, wire it into get_current_user.",
+    "utils.set_auth_cookies checks FRONTEND_URL prefix at call-time - correct. Ensure Hostinger deployment sets FRONTEND_URL to the https URL.",
+    "AuthCallback.js clears the hash BEFORE awaiting loginWithGoogle - good; also uses hasProcessed ref to guard StrictMode double-invoke - good.",
+    "server.py CORS uses set() over _origins which is fine but preflight in k8s env still returns *; verify in production the FastAPI middleware is what's serving CORS."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_auth_google_login.py"
+  ],
+  "success_rate": {"backend": "87.5% (7/8, 1 env-related CORS quirk)", "frontend": "100%"},
+  "test_credentials": "admin@example.com / admin123 (super_admin)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Cookie HTTPS fix + Google OAuth callback are verified. Full Google OAuth end-to-end (real session_id) cannot be automated - only backend/callback wiring and UI redirect flow tested. If retesting, use pytest at /app/backend/tests/test_auth_google_login.py.",
+  "rca of the issue": "N/A - fixes verified working"
+}

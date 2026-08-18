@@ -19,7 +19,15 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => { checkAuth(); }, [checkAuth]);
+  useEffect(() => {
+    // CRITICAL: If returning from OAuth callback, skip the /me check.
+    // AuthCallback will exchange the session_id and establish the session first.
+    if (window.location.hash?.includes('session_id=')) {
+      setLoading(false);
+      return;
+    }
+    checkAuth();
+  }, [checkAuth]);
 
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
@@ -29,6 +37,12 @@ export function AuthProvider({ children }) {
 
   const register = async (name, email, password) => {
     const { data } = await api.post('/auth/register', { name, email, password });
+    setUser(data);
+    return data;
+  };
+
+  const loginWithGoogle = async (sessionId) => {
+    const { data } = await api.post('/auth/google/callback', { session_id: sessionId });
     setUser(data);
     return data;
   };
@@ -46,7 +60,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser, loginWithGoogle, setUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -64,8 +64,11 @@ async def login(req: LoginRequest, request: Request, response: Response):
 
 @router.post("/auth/logout")
 async def logout(response: Response):
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/")
+    import os
+    is_https = os.environ.get("FRONTEND_URL", "").startswith("https://")
+    kwargs = {"path": "/", "secure": is_https, "samesite": "none" if is_https else "lax"}
+    response.delete_cookie("access_token", **kwargs)
+    response.delete_cookie("refresh_token", **kwargs)
     return {"message": "Logged out"}
 
 @router.get("/auth/me")
@@ -86,7 +89,9 @@ async def refresh_token(request: Request, response: Response):
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         access = create_access_token(str(user["_id"]), user["email"])
-        response.set_cookie("access_token", access, httponly=True, secure=False, samesite="lax", max_age=3600, path="/")
+        import os
+        is_https = os.environ.get("FRONTEND_URL", "").startswith("https://")
+        response.set_cookie("access_token", access, httponly=True, secure=is_https, samesite="none" if is_https else "lax", max_age=3600, path="/")
         return serialize_user(user)
     except pyjwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")

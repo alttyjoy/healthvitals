@@ -27,8 +27,12 @@ def create_refresh_token(user_id: str) -> str:
     return pyjwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 def set_auth_cookies(response: Response, access: str, refresh: str):
-    response.set_cookie("access_token", access, httponly=True, secure=False, samesite="lax", max_age=3600, path="/")
-    response.set_cookie("refresh_token", refresh, httponly=True, secure=False, samesite="lax", max_age=604800, path="/")
+    import os
+    is_https = os.environ.get("FRONTEND_URL", "").startswith("https://")
+    secure = is_https
+    samesite = "none" if is_https else "lax"
+    response.set_cookie("access_token", access, httponly=True, secure=secure, samesite=samesite, max_age=3600, path="/")
+    response.set_cookie("refresh_token", refresh, httponly=True, secure=secure, samesite=samesite, max_age=604800, path="/")
 
 def serialize_user(user: dict) -> dict:
     u = {k: v for k, v in user.items() if k != "_id" and k != "password_hash"}
